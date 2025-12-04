@@ -144,7 +144,6 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
         }}
       >
         <MarkdownRenderer text={message.text} isUser={isUser} />
-        {/* Tiny timestamp simulation if needed, can add later */}
       </div>
     </div>
   );
