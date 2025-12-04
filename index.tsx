@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { GoogleGenAI, Content } from "@google/genai";
+import { GoogleGenAI, Content, GenerateContentResponse } from "@google/genai";
 
 // --- System Instruction for MiguelBot ---
 const SYSTEM_INSTRUCTION = `
@@ -246,8 +246,10 @@ const App = () => {
       if (initialMessages.length === 0) {
         setIsLoading(true);
         try {
-          const result = await chatRef.current.sendMessage('Hola'); // Trigger the greeting
-          const responseText = result.response.text();
+          // IMPORTANT: Must pass object with message property
+          const result: GenerateContentResponse = await chatRef.current.sendMessage({ message: 'Hola' });
+          // IMPORTANT: Access .text property directly
+          const responseText = result.text || "";
           setMessages([{ role: 'model', text: responseText }]);
         } catch (error) {
           console.error("Error starting chat:", error);
@@ -282,8 +284,10 @@ const App = () => {
     setIsLoading(true);
 
     try {
-      const result = await chatRef.current.sendMessage(userText);
-      const responseText = result.response.text();
+      // IMPORTANT: Must pass object with message property
+      const result: GenerateContentResponse = await chatRef.current.sendMessage({ message: userText });
+      // IMPORTANT: Access .text property directly
+      const responseText = result.text || "";
       setMessages(prev => [...prev, { role: 'model', text: responseText }]);
     } catch (error) {
       console.error("Generation error:", error);
