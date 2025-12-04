@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
@@ -60,16 +59,25 @@ interface LocalContent {
 }
 
 // Markdown Renderer specifically tailored for chat readability
-const MarkdownRenderer: React.FC<{ text: string }> = ({ text }) => {
+const MarkdownRenderer: React.FC<{ text: string; isUser: boolean }> = ({ text, isUser }) => {
   if (!text) return null;
   
   // Split text by lines to handle formatting
   const lines = text.split('\n');
   
   return (
-    <div>
+    <div style={{ wordBreak: 'break-word' }}>
       {lines.map((line, i) => {
-        // Handle bold text **text**
+        // Handle headings roughly
+        if (line.startsWith('### ')) {
+            return <h3 key={i} style={{ margin: '8px 0 4px', fontSize: '1.1em', fontWeight: 600 }}>{line.replace('### ', '')}</h3>
+        }
+        if (line.startsWith('**') && line.endsWith('**') && line.length > 40) {
+            // Treat long bold lines almost like headers
+             return <div key={i} style={{ margin: '8px 0 4px', fontWeight: 700 }}>{line.slice(2, -2)}</div>
+        }
+
+        // Handle bold text **text** within lines
         const parts = line.split(/(\*\*.*?\*\*)/g);
         
         return (
@@ -88,15 +96,15 @@ const MarkdownRenderer: React.FC<{ text: string }> = ({ text }) => {
 };
 
 const TypingIndicator = () => (
-  <div style={{ display: 'flex', gap: '4px', padding: '8px 12px' }}>
+  <div style={{ display: 'flex', gap: '4px', padding: '8px 12px', alignItems: 'center', height: '100%' }}>
     <div className="dot" style={{ animationDelay: '0s' }}></div>
     <div className="dot" style={{ animationDelay: '0.2s' }}></div>
     <div className="dot" style={{ animationDelay: '0.4s' }}></div>
     <style>{`
       .dot {
-        width: 8px;
-        height: 8px;
-        background: #aaa;
+        width: 6px;
+        height: 6px;
+        background: #9ca3af;
         border-radius: 50%;
         animation: bounce 1.4s infinite ease-in-out both;
       }
@@ -112,27 +120,31 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
   const isUser = message.role === 'user';
   return (
     <div
+      className="message-enter"
       style={{
         display: 'flex',
         justifyContent: isUser ? 'flex-end' : 'flex-start',
-        marginBottom: '10px',
+        marginBottom: '12px',
+        padding: '0 8px'
       }}
     >
       <div
         style={{
-          maxWidth: '80%',
-          padding: '10px 15px',
-          borderRadius: '15px',
-          borderTopLeftRadius: !isUser ? '0' : '15px',
-          borderTopRightRadius: isUser ? '0' : '15px',
+          maxWidth: '85%',
+          padding: '12px 16px',
+          borderRadius: '18px',
+          borderTopRightRadius: isUser ? '4px' : '18px',
+          borderTopLeftRadius: !isUser ? '4px' : '18px',
           backgroundColor: isUser ? 'var(--user-msg-bg)' : 'var(--bot-msg-bg)',
-          color: '#303030',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+          color: isUser ? 'var(--user-msg-text)' : 'var(--bot-msg-text)',
+          boxShadow: 'var(--shadow-sm)',
           fontSize: '15px',
-          lineHeight: '1.4',
+          lineHeight: '1.5',
+          position: 'relative',
         }}
       >
-        <MarkdownRenderer text={message.text} />
+        <MarkdownRenderer text={message.text} isUser={isUser} />
+        {/* Tiny timestamp simulation if needed, can add later */}
       </div>
     </div>
   );
@@ -143,57 +155,67 @@ const HelpModal: React.FC<{ onClose: () => void; onReset: () => void }> = ({ onC
     <div style={{
       position: 'absolute',
       top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      backdropFilter: 'blur(2px)',
       zIndex: 100,
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      animation: 'fadeIn 0.2s ease-out'
     }}>
       <div style={{
         backgroundColor: 'white',
-        padding: '20px',
-        borderRadius: '10px',
+        padding: '24px',
+        borderRadius: '16px',
         maxWidth: '85%',
         maxHeight: '80%',
         overflowY: 'auto',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+        boxShadow: 'var(--shadow-md)',
+        width: '400px'
       }}>
-        <h3 style={{ marginTop: 0, color: 'var(--primary-color)' }}>Guía Rápida MiguelBot</h3>
-        <p>¡Bienvenido al diagnóstico EXANI-II!</p>
-        <ul style={{ paddingLeft: '20px', fontSize: '14px' }}>
-          <li><strong>Interactúa:</strong> Responde a las preguntas de MiguelBot escribiendo en el chat.</li>
-          <li><strong>Datos:</strong> Tus datos son confidenciales y solo para personalizar tu reporte.</li>
-          <li><strong>Reactivos:</strong> Se presentarán 30 preguntas en bloques de 5.</li>
-          <li><strong>Respuestas:</strong> Escribe la letra (A, B, C) correspondiente. Ejemplo: "1-A, 2-C...".</li>
-          <li><strong>Resultados:</strong> Al final recibirás un puntaje estimado y consejos.</li>
-          <li><strong>Guardado:</strong> Tu progreso se guarda automáticamente. Puedes cerrar y volver después.</li>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+             <h3 style={{ margin: 0, color: 'var(--primary-color)', fontSize: '20px' }}>Guía MiguelBot</h3>
+             <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#6b7280' }}>&times;</button>
+        </div>
+        
+        <p style={{ color: '#4b5563', marginBottom: '16px' }}>¡Bienvenido al diagnóstico EXANI-II!</p>
+        <ul style={{ paddingLeft: '20px', fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>
+          <li style={{ marginBottom: '8px' }}><strong>Interactúa:</strong> Responde a las preguntas de MiguelBot escribiendo en el chat.</li>
+          <li style={{ marginBottom: '8px' }}><strong>Datos:</strong> Tus datos son confidenciales.</li>
+          <li style={{ marginBottom: '8px' }}><strong>Reactivos:</strong> Se presentarán 30 preguntas en bloques.</li>
+          <li style={{ marginBottom: '8px' }}><strong>Respuestas:</strong> Escribe la letra (A, B, C). Ejemplo: "1-A, 2-C...".</li>
+          <li style={{ marginBottom: '8px' }}><strong>Guardado:</strong> Tu progreso se guarda automáticamente.</li>
         </ul>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
-          <button 
-            onClick={onReset}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#d32f2f',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer'
-            }}
-          >
-            Borrar Progreso
-          </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '24px' }}>
           <button 
             onClick={onClose}
             style={{
-              padding: '8px 16px',
+              padding: '12px',
               backgroundColor: 'var(--primary-color)',
               color: 'white',
               border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer'
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 500,
+              fontSize: '14px'
             }}
           >
-            Entendido
+            Continuar Diagnóstico
+          </button>
+           <button 
+            onClick={onReset}
+            style={{
+              padding: '12px',
+              backgroundColor: '#fee2e2',
+              color: '#dc2626',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 500,
+              fontSize: '14px'
+            }}
+          >
+            Reiniciar Todo
           </button>
         </div>
       </div>
@@ -210,16 +232,12 @@ const App = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Use a ref for the chat object to persist it across renders without causing re-renders
   const chatRef = useRef<any>(null);
 
-  // Initialize Chat and Load History
   useEffect(() => {
     const initChat = async () => {
-      // Check for API Key immediately
       if (!process.env.API_KEY) {
-        setErrorMsg("API_KEY no encontrada. Configura la variable de entorno en tu plataforma de despliegue (Vercel).");
+        setErrorMsg("API_KEY no encontrada. Configura la variable de entorno.");
         return;
       }
 
@@ -231,10 +249,7 @@ const App = () => {
         try {
           initialMessages = JSON.parse(storedMessages);
           setMessages(initialMessages);
-          
-          // Rebuild history strictly
           initialMessages.forEach(msg => {
-             // Validate content to prevent "ContentUnion is required" error
              if (msg.role && msg.text && msg.text.trim() !== "") {
                 history.push({
                   role: msg.role,
@@ -252,45 +267,37 @@ const App = () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         chatRef.current = ai.chats.create({
           model: 'gemini-3-pro-preview',
-          config: {
-            systemInstruction: SYSTEM_INSTRUCTION,
-          },
+          config: { systemInstruction: SYSTEM_INSTRUCTION },
           history: history
         });
 
-        // If no history, trigger the start
         if (initialMessages.length === 0) {
           setIsLoading(true);
           try {
-            // IMPORTANT: Must pass object with message property
             const result: GenerateContentResponse = await chatRef.current.sendMessage({ message: 'Hola' });
-            // IMPORTANT: Access .text property directly
-            const responseText = result.text || "";
-            setMessages([{ role: 'model', text: responseText }]);
+            setMessages([{ role: 'model', text: result.text || "" }]);
           } catch (error) {
             console.error("Error starting chat:", error);
-            setMessages([{ role: 'model', text: "Hubo un error al iniciar. Por favor recarga la página o revisa tu conexión." }]);
+            setMessages([{ role: 'model', text: "Hubo un error al iniciar. Por favor revisa tu conexión." }]);
           } finally {
             setIsLoading(false);
           }
         }
       } catch (err) {
         console.error("Initialization error:", err);
-        setErrorMsg("Error al inicializar MiguelBot. Revisa la consola para más detalles.");
+        setErrorMsg("Error al inicializar MiguelBot.");
       }
     };
 
     initChat();
   }, []);
 
-  // Save to LocalStorage whenever messages change
   useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     }
   }, [messages]);
 
-  // Auto-scroll logic
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, isLoading]);
@@ -304,13 +311,11 @@ const App = () => {
     setIsLoading(true);
 
     try {
-      // IMPORTANT: Must pass object with message property for new SDK
       const result: GenerateContentResponse = await chatRef.current.sendMessage({ message: userText });
-      const responseText = result.text || "";
-      setMessages(prev => [...prev, { role: 'model', text: responseText }]);
+      setMessages(prev => [...prev, { role: 'model', text: result.text || "" }]);
     } catch (error) {
       console.error("Generation error:", error);
-      setMessages(prev => [...prev, { role: 'model', text: "Lo siento, hubo un error de conexión o el servicio está ocupado. Intenta de nuevo en unos segundos." }]);
+      setMessages(prev => [...prev, { role: 'model', text: "Lo siento, hubo un error de conexión. Intenta de nuevo." }]);
     } finally {
       setIsLoading(false);
     }
@@ -324,7 +329,7 @@ const App = () => {
   };
 
   const resetChat = () => {
-    if (confirm('¿Estás seguro de que quieres borrar todo el progreso y empezar de nuevo?')) {
+    if (confirm('¿Borrar todo el progreso y empezar de nuevo?')) {
       localStorage.removeItem(STORAGE_KEY);
       window.location.reload();
     }
@@ -332,8 +337,8 @@ const App = () => {
 
   if (errorMsg) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: '20px', flexDirection: 'column', textAlign: 'center' }}>
-        <h2 style={{ color: '#d32f2f' }}>Error de Configuración</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: '20px', flexDirection: 'column', textAlign: 'center', color: '#374151' }}>
+        <h2 style={{ color: '#dc2626' }}>Error de Configuración</h2>
         <p>{errorMsg}</p>
       </div>
     );
@@ -343,37 +348,46 @@ const App = () => {
     <>
       {/* Header */}
       <div style={{
-        backgroundColor: 'var(--primary-color)',
+        background: 'var(--primary-gradient)',
         color: 'white',
-        padding: '10px 15px',
+        padding: '12px 20px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+        boxShadow: 'var(--shadow-md)',
         zIndex: 10
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
-            width: '40px', height: '40px',
-            backgroundColor: 'white', borderRadius: '50%',
+            width: '42px', height: '42px',
+            backgroundColor: 'rgba(255,255,255,0.2)', 
+            backdropFilter: 'blur(5px)',
+            borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--primary-color)', fontWeight: 'bold'
+            color: 'white', fontWeight: 'bold', border: '2px solid rgba(255,255,255,0.3)'
           }}>
-            MB
+            <span style={{ fontSize: '18px' }}>🤖</span>
           </div>
-          <div>
-            <div style={{ fontWeight: 'bold', fontSize: '16px' }}>MiguelBot</div>
-            <div style={{ fontSize: '12px', opacity: 0.9 }}>
-              {isLoading ? 'Escribiendo...' : 'En línea | EXANI-II 2026'}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontWeight: '600', fontSize: '17px', letterSpacing: '0.3px' }}>MiguelBot</div>
+            <div style={{ fontSize: '12px', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ 
+                  display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', 
+                  backgroundColor: isLoading ? '#fbbf24' : '#34d399',
+                  boxShadow: '0 0 5px rgba(0,0,0,0.2)'
+              }}></span>
+              {isLoading ? 'Escribiendo...' : 'En línea'}
             </div>
           </div>
         </div>
         <button 
           onClick={() => setShowHelp(true)}
           style={{
-            background: 'none', border: '2px solid rgba(255,255,255,0.5)',
-            color: 'white', borderRadius: '50%', width: '28px', height: '28px',
-            cursor: 'pointer', fontSize: '14px', fontWeight: 'bold'
+            background: 'rgba(255,255,255,0.15)', border: 'none',
+            color: 'white', borderRadius: '50%', width: '32px', height: '32px',
+            cursor: 'pointer', fontSize: '16px', fontWeight: 'bold',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 0.2s'
           }}
           title="Ayuda"
         >
@@ -385,16 +399,24 @@ const App = () => {
       <div style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '15px',
+        padding: '20px 12px',
         display: 'flex',
         flexDirection: 'column',
-        backgroundImage: 'linear-gradient(#e5ddd5 2px, transparent 2px), linear-gradient(90deg, #e5ddd5 2px, transparent 2px)',
-        backgroundSize: '20px 20px',
-        backgroundBlendMode: 'multiply'
+        backgroundImage: 'linear-gradient(rgba(239, 231, 221, 0.9), rgba(239, 231, 221, 0.9)), url("https://www.transparenttextures.com/patterns/subtle-white-feathers.png")',
+        backgroundSize: 'auto',
       }}>
-        {/* Intro Date Stamp Style */}
-        <div style={{ textAlign: 'center', marginBottom: '15px', opacity: 0.6, fontSize: '12px' }}>
-          {new Date().toLocaleDateString()}
+        <div style={{ 
+          alignSelf: 'center', 
+          marginBottom: '20px', 
+          backgroundColor: 'rgba(255,255,255,0.6)', 
+          padding: '4px 12px', 
+          borderRadius: '12px',
+          fontSize: '11px',
+          color: '#6b7280',
+          fontWeight: 500,
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+        }}>
+          DIAGNÓSTICO EXANI-II 2026
         </div>
 
         {messages.map((msg, idx) => (
@@ -402,13 +424,16 @@ const App = () => {
         ))}
 
         {isLoading && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px', paddingLeft: '8px' }}>
              <div style={{
-                padding: '10px 15px',
-                borderRadius: '15px',
-                borderTopLeftRadius: '0',
+                padding: '12px 18px',
+                borderRadius: '18px',
+                borderTopLeftRadius: '4px',
                 backgroundColor: 'var(--bot-msg-bg)',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                boxShadow: 'var(--shadow-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                height: '24px'
              }}>
                <TypingIndicator />
              </div>
@@ -419,48 +444,60 @@ const App = () => {
 
       {/* Input Area */}
       <div style={{
-        backgroundColor: '#f0f0f0',
-        padding: '10px',
+        backgroundColor: '#f0f2f5',
+        padding: '12px 16px',
         display: 'flex',
-        gap: '10px',
-        alignItems: 'center'
+        gap: '12px',
+        alignItems: 'center',
+        borderTop: '1px solid #e5e7eb'
       }}>
-        <input
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Escribe tu respuesta aquí..."
-          style={{
+        <div style={{
             flex: 1,
-            padding: '12px 15px',
-            borderRadius: '25px',
-            border: 'none',
-            outline: 'none',
-            fontSize: '16px',
-            backgroundColor: 'white'
-          }}
-          disabled={isLoading}
-        />
+            backgroundColor: 'white',
+            borderRadius: '24px',
+            padding: '4px 8px',
+            display: 'flex',
+            alignItems: 'center',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            border: '1px solid #e5e7eb'
+        }}>
+            <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Escribe tu respuesta aquí..."
+            style={{
+                flex: 1,
+                padding: '10px 12px',
+                border: 'none',
+                outline: 'none',
+                fontSize: '16px',
+                backgroundColor: 'transparent',
+                fontFamily: 'inherit'
+            }}
+            disabled={isLoading}
+            />
+        </div>
         <button
           onClick={handleSend}
           disabled={isLoading || !inputText.trim()}
           style={{
-            backgroundColor: 'var(--primary-color)',
+            background: inputText.trim() ? 'var(--primary-color)' : '#9ca3af',
             color: 'white',
             border: 'none',
-            width: '45px',
-            height: '45px',
+            width: '44px',
+            height: '44px',
             borderRadius: '50%',
-            cursor: 'pointer',
+            cursor: inputText.trim() ? 'pointer' : 'default',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: isLoading ? 0.7 : 1
+            transition: 'background 0.2s, transform 0.1s',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
           }}
         >
-          {/* Send Icon SVG */}
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
           </svg>
         </button>
