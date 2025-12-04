@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { GoogleGenAI, Content, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 
 // --- System Instruction for MiguelBot ---
 const SYSTEM_INSTRUCTION = `
@@ -50,6 +51,12 @@ const STORAGE_KEY = 'miguelbot_chat_session';
 interface Message {
   role: 'user' | 'model';
   text: string;
+}
+
+// Local interface to replace the imported Content type which might fail at runtime
+interface LocalContent {
+  role: string;
+  parts: { text: string }[];
 }
 
 // Markdown Renderer specifically tailored for chat readability
@@ -201,6 +208,7 @@ const App = () => {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Use a ref for the chat object to persist it across renders without causing re-renders
@@ -209,8 +217,14 @@ const App = () => {
   // Initialize Chat and Load History
   useEffect(() => {
     const initChat = async () => {
+      // Check for API Key immediately
+      if (!process.env.API_KEY) {
+        setErrorMsg("API_KEY no encontrada. Configura la variable de entorno en tu plataforma de despliegue (Vercel).");
+        return;
+      }
+
       const storedMessages = localStorage.getItem(STORAGE_KEY);
-      const history: Content[] = [];
+      const history: LocalContent[] = [];
       let initialMessages: Message[] = [];
 
       if (storedMessages) {
@@ -218,14 +232,15 @@ const App = () => {
           initialMessages = JSON.parse(storedMessages);
           setMessages(initialMessages);
           
-          // Rebuild history for the model
-          // Filter out potential system-triggered user messages if we were to add any logic there,
-          // but for now we map direct role/text.
+          // Rebuild history strictly
           initialMessages.forEach(msg => {
-             history.push({
-               role: msg.role,
-               parts: [{ text: msg.text }]
-             });
+             // Validate content to prevent "ContentUnion is required" error
+             if (msg.role && msg.text && msg.text.trim() !== "") {
+                history.push({
+                  role: msg.role,
+                  parts: [{ text: msg.text }]
+                });
+             }
           });
         } catch (e) {
           console.error("Error parsing stored history", e);
@@ -233,30 +248,35 @@ const App = () => {
         }
       }
 
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      chatRef.current = ai.chats.create({
-        model: 'gemini-3-pro-preview',
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-        },
-        history: history
-      });
+      try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        chatRef.current = ai.chats.create({
+          model: 'gemini-3-pro-preview',
+          config: {
+            systemInstruction: SYSTEM_INSTRUCTION,
+          },
+          history: history
+        });
 
-      // If no history, trigger the start
-      if (initialMessages.length === 0) {
-        setIsLoading(true);
-        try {
-          // IMPORTANT: Must pass object with message property
-          const result: GenerateContentResponse = await chatRef.current.sendMessage({ message: 'Hola' });
-          // IMPORTANT: Access .text property directly
-          const responseText = result.text || "";
-          setMessages([{ role: 'model', text: responseText }]);
-        } catch (error) {
-          console.error("Error starting chat:", error);
-          setMessages([{ role: 'model', text: "Hubo un error al iniciar. Por favor recarga la página." }]);
-        } finally {
-          setIsLoading(false);
+        // If no history, trigger the start
+        if (initialMessages.length === 0) {
+          setIsLoading(true);
+          try {
+            // IMPORTANT: Must pass object with message property
+            const result: GenerateContentResponse = await chatRef.current.sendMessage({ message: 'Hola' });
+            // IMPORTANT: Access .text property directly
+            const responseText = result.text || "";
+            setMessages([{ role: 'model', text: responseText }]);
+          } catch (error) {
+            console.error("Error starting chat:", error);
+            setMessages([{ role: 'model', text: "Hubo un error al iniciar. Por favor recarga la página o revisa tu conexión." }]);
+          } finally {
+            setIsLoading(false);
+          }
         }
+      } catch (err) {
+        console.error("Initialization error:", err);
+        setErrorMsg("Error al inicializar MiguelBot. Revisa la consola para más detalles.");
       }
     };
 
@@ -284,14 +304,13 @@ const App = () => {
     setIsLoading(true);
 
     try {
-      // IMPORTANT: Must pass object with message property
+      // IMPORTANT: Must pass object with message property for new SDK
       const result: GenerateContentResponse = await chatRef.current.sendMessage({ message: userText });
-      // IMPORTANT: Access .text property directly
       const responseText = result.text || "";
       setMessages(prev => [...prev, { role: 'model', text: responseText }]);
     } catch (error) {
       console.error("Generation error:", error);
-      setMessages(prev => [...prev, { role: 'model', text: "Lo siento, hubo un error de conexión. Intenta enviar tu respuesta de nuevo." }]);
+      setMessages(prev => [...prev, { role: 'model', text: "Lo siento, hubo un error de conexión o el servicio está ocupado. Intenta de nuevo en unos segundos." }]);
     } finally {
       setIsLoading(false);
     }
@@ -310,6 +329,15 @@ const App = () => {
       window.location.reload();
     }
   };
+
+  if (errorMsg) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: '20px', flexDirection: 'column', textAlign: 'center' }}>
+        <h2 style={{ color: '#d32f2f' }}>Error de Configuración</h2>
+        <p>{errorMsg}</p>
+      </div>
+    );
+  }
 
   return (
     <>
