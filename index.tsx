@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Content } from "@google/genai";
 
 // --- System Instruction for MiguelBot ---
 const SYSTEM_INSTRUCTION = `
@@ -52,141 +52,244 @@ interface Message {
   text: string;
 }
 
+// Markdown Renderer specifically tailored for chat readability
 const MarkdownRenderer: React.FC<{ text: string }> = ({ text }) => {
-  // Simple renderer to handle bolding and newlines for the "WhatsApp" feel
-  const processText = (input: string) => {
-    // 1. Handle double asterisks for bolding: **text** -> <b>text</b>
-    let processed = input.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-    // 2. Handle single asterisks for bolding (sometimes models use this): *text* -> <b>text</b>
-    // Be careful not to replace list items
-    processed = processed.replace(/(\s|^)\*(?!\s)(.*?)\*(?=\s|$)/g, '$1<b>$2</b>');
-    
-    // 3. Handle newlines
-    return processed.split('\n').map((line, i) => (
-      <React.Fragment key={i}>
-        <span dangerouslySetInnerHTML={{ __html: line }} />
-        <br />
-      </React.Fragment>
-    ));
-  };
-
-  return <div style={{ lineHeight: '1.5' }}>{processText(text)}</div>;
+  if (!text) return null;
+  
+  // Split text by lines to handle formatting
+  const lines = text.split('\n');
+  
+  return (
+    <div>
+      {lines.map((line, i) => {
+        // Handle bold text **text**
+        const parts = line.split(/(\*\*.*?\*\*)/g);
+        
+        return (
+          <div key={i} style={{ minHeight: line.trim() === '' ? '0.5em' : 'auto', marginBottom: '4px' }}>
+            {parts.map((part, j) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={j}>{part.slice(2, -2)}</strong>;
+              }
+              return <span key={j}>{part}</span>;
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
 };
+
+const TypingIndicator = () => (
+  <div style={{ display: 'flex', gap: '4px', padding: '8px 12px' }}>
+    <div className="dot" style={{ animationDelay: '0s' }}></div>
+    <div className="dot" style={{ animationDelay: '0.2s' }}></div>
+    <div className="dot" style={{ animationDelay: '0.4s' }}></div>
+    <style>{`
+      .dot {
+        width: 8px;
+        height: 8px;
+        background: #aaa;
+        border-radius: 50%;
+        animation: bounce 1.4s infinite ease-in-out both;
+      }
+      @keyframes bounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+      }
+    `}</style>
+  </div>
+);
+
+const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
+  const isUser = message.role === 'user';
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: isUser ? 'flex-end' : 'flex-start',
+        marginBottom: '10px',
+      }}
+    >
+      <div
+        style={{
+          maxWidth: '80%',
+          padding: '10px 15px',
+          borderRadius: '15px',
+          borderTopLeftRadius: !isUser ? '0' : '15px',
+          borderTopRightRadius: isUser ? '0' : '15px',
+          backgroundColor: isUser ? 'var(--user-msg-bg)' : 'var(--bot-msg-bg)',
+          color: '#303030',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+          fontSize: '15px',
+          lineHeight: '1.4',
+        }}
+      >
+        <MarkdownRenderer text={message.text} />
+      </div>
+    </div>
+  );
+};
+
+const HelpModal: React.FC<{ onClose: () => void; onReset: () => void }> = ({ onClose, onReset }) => {
+  return (
+    <div style={{
+      position: 'absolute',
+      top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      zIndex: 100,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '20px',
+        borderRadius: '10px',
+        maxWidth: '85%',
+        maxHeight: '80%',
+        overflowY: 'auto',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+      }}>
+        <h3 style={{ marginTop: 0, color: 'var(--primary-color)' }}>Guía Rápida MiguelBot</h3>
+        <p>¡Bienvenido al diagnóstico EXANI-II!</p>
+        <ul style={{ paddingLeft: '20px', fontSize: '14px' }}>
+          <li><strong>Interactúa:</strong> Responde a las preguntas de MiguelBot escribiendo en el chat.</li>
+          <li><strong>Datos:</strong> Tus datos son confidenciales y solo para personalizar tu reporte.</li>
+          <li><strong>Reactivos:</strong> Se presentarán 30 preguntas en bloques de 5.</li>
+          <li><strong>Respuestas:</strong> Escribe la letra (A, B, C) correspondiente. Ejemplo: "1-A, 2-C...".</li>
+          <li><strong>Resultados:</strong> Al final recibirás un puntaje estimado y consejos.</li>
+          <li><strong>Guardado:</strong> Tu progreso se guarda automáticamente. Puedes cerrar y volver después.</li>
+        </ul>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+          <button 
+            onClick={onReset}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#d32f2f',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer'
+            }}
+          >
+            Borrar Progreso
+          </button>
+          <button 
+            onClick={onClose}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: 'var(--primary-color)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer'
+            }}
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Main App ---
 
 const App = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showHelp, setShowHelp] = useState(false); // State for Help Modal
+  const [showHelp, setShowHelp] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const hasStarted = useRef(false);
-
-  // Initialize AI client
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Use a ref to store the chat session so it persists across renders
-  const chatSessionRef = useRef<any>(null);
+  // Use a ref for the chat object to persist it across renders without causing re-renders
+  const chatRef = useRef<any>(null);
 
-  const startChat = async () => {
-    if (hasStarted.current) return;
-    hasStarted.current = true;
-    setIsLoading(true);
-
-    try {
-      // Check for saved session in localStorage
-      const savedData = localStorage.getItem(STORAGE_KEY);
-      
-      let history = [];
+  // Initialize Chat and Load History
+  useEffect(() => {
+    const initChat = async () => {
+      const storedMessages = localStorage.getItem(STORAGE_KEY);
+      const history: Content[] = [];
       let initialMessages: Message[] = [];
 
-      if (savedData) {
-        // RESUME SESSION
-        initialMessages = JSON.parse(savedData);
-        // Transform UI messages back to API history format
-        // Note: The hidden trigger message isn't in UI state, but usually the model needs context.
-        // However, if we just feed the previous Q&A turns, Gemini is smart enough to continue.
-        history = initialMessages.map(msg => ({
-          role: msg.role,
-          parts: [{ text: msg.text }]
-        }));
-        
-        // Update UI immediately with saved messages
-        setMessages(initialMessages);
-        
-        // Initialize chat with history
-        chatSessionRef.current = ai.chats.create({
-          model: 'gemini-3-pro-preview',
-          config: { systemInstruction: SYSTEM_INSTRUCTION },
-          history: history
-        });
-        
-        setIsLoading(false); // Important: Stop loading if just restoring session
-
-      } else {
-        // NEW SESSION
-        chatSessionRef.current = ai.chats.create({
-          model: 'gemini-3-pro-preview',
-          config: { systemInstruction: SYSTEM_INSTRUCTION },
-        });
-
-        // Send invisible trigger message
-        const response = await chatSessionRef.current.sendMessage({
-          message: "Hola MiguelBot, estoy listo para iniciar el diagnóstico."
-        });
-        
-        initialMessages = [{ role: 'model', text: response.text }];
-        setMessages(initialMessages);
-        setIsLoading(false);
+      if (storedMessages) {
+        try {
+          initialMessages = JSON.parse(storedMessages);
+          setMessages(initialMessages);
+          
+          // Rebuild history for the model
+          // Filter out potential system-triggered user messages if we were to add any logic there,
+          // but for now we map direct role/text.
+          initialMessages.forEach(msg => {
+             history.push({
+               role: msg.role,
+               parts: [{ text: msg.text }]
+             });
+          });
+        } catch (e) {
+          console.error("Error parsing stored history", e);
+          localStorage.removeItem(STORAGE_KEY);
+        }
       }
 
-    } catch (error) {
-      console.error("Error starting chat:", error);
-      setMessages([{ role: 'model', text: "Lo siento, hubo un error al conectar con MiguelBot. Por favor recarga la página." }]);
-      setIsLoading(false);
-    }
-  };
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      chatRef.current = ai.chats.create({
+        model: 'gemini-3-pro-preview',
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+        },
+        history: history
+      });
 
-  useEffect(() => {
-    startChat();
+      // If no history, trigger the start
+      if (initialMessages.length === 0) {
+        setIsLoading(true);
+        try {
+          const result = await chatRef.current.sendMessage('Hola'); // Trigger the greeting
+          const responseText = result.response.text();
+          setMessages([{ role: 'model', text: responseText }]);
+        } catch (error) {
+          console.error("Error starting chat:", error);
+          setMessages([{ role: 'model', text: "Hubo un error al iniciar. Por favor recarga la página." }]);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initChat();
   }, []);
 
-  // Save messages to localStorage whenever they change
+  // Save to LocalStorage whenever messages change
   useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     }
   }, [messages]);
 
-  // Smooth scroll to bottom whenever messages change or loading state changes
+  // Auto-scroll logic
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, isLoading]);
 
   const handleSend = async () => {
-    if (!inputValue.trim() || isLoading || !chatSessionRef.current) return;
+    if (!inputText.trim() || !chatRef.current || isLoading) return;
 
-    const userText = inputValue;
-    setInputValue('');
+    const userText = inputText;
+    setInputText('');
     setMessages(prev => [...prev, { role: 'user', text: userText }]);
     setIsLoading(true);
 
     try {
-      const response = await chatSessionRef.current.sendMessage({
-        message: userText
-      });
-      setMessages(prev => [...prev, { role: 'model', text: response.text }]);
+      const result = await chatRef.current.sendMessage(userText);
+      const responseText = result.response.text();
+      setMessages(prev => [...prev, { role: 'model', text: responseText }]);
     } catch (error) {
-      console.error("Error sending message:", error);
-      setMessages(prev => [...prev, { role: 'model', text: "Hubo un error de conexión. Intenta enviar tu respuesta nuevamente." }]);
+      console.error("Generation error:", error);
+      setMessages(prev => [...prev, { role: 'model', text: "Lo siento, hubo un error de conexión. Intenta enviar tu respuesta de nuevo." }]);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleReset = () => {
-    if (confirm("¿Estás seguro de que quieres borrar todo tu progreso y empezar de nuevo?")) {
-      localStorage.removeItem(STORAGE_KEY);
-      window.location.reload();
     }
   };
 
@@ -197,66 +300,50 @@ const App = () => {
     }
   };
 
+  const resetChat = () => {
+    if (confirm('¿Estás seguro de que quieres borrar todo el progreso y empezar de nuevo?')) {
+      localStorage.removeItem(STORAGE_KEY);
+      window.location.reload();
+    }
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
+    <>
       {/* Header */}
       <div style={{
-        backgroundColor: '#005c99',
+        backgroundColor: 'var(--primary-color)',
         color: 'white',
-        padding: '15px',
+        padding: '10px 15px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between', 
-        gap: '10px',
-        boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+        justifyContent: 'space-between',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
         zIndex: 10
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            backgroundColor: '#ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '24px'
+            width: '40px', height: '40px',
+            backgroundColor: 'white', borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--primary-color)', fontWeight: 'bold'
           }}>
-            👨‍🏫
+            MB
           </div>
           <div>
-            <div style={{ fontWeight: 'bold', fontSize: '18px' }}>MiguelBot</div>
-            <div style={{ 
-              fontSize: '12px', 
-              opacity: 0.9, 
-              minHeight: '1.2em', 
-              transition: 'all 0.3s ease',
-              fontStyle: isLoading ? 'italic' : 'normal',
-              fontWeight: isLoading ? 'bold' : 'normal'
-            }}>
-              {isLoading ? 'Escribiendo...' : 'En línea - Diagnóstico EXANI-II 2026'}
+            <div style={{ fontWeight: 'bold', fontSize: '16px' }}>MiguelBot</div>
+            <div style={{ fontSize: '12px', opacity: 0.9 }}>
+              {isLoading ? 'Escribiendo...' : 'En línea | EXANI-II 2026'}
             </div>
           </div>
         </div>
-        
-        {/* Help Button */}
         <button 
           onClick={() => setShowHelp(true)}
           style={{
-            background: 'rgba(255,255,255,0.2)',
-            border: '1px solid rgba(255,255,255,0.5)',
-            color: 'white',
-            borderRadius: '50%',
-            width: '30px',
-            height: '30px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            background: 'none', border: '2px solid rgba(255,255,255,0.5)',
+            color: 'white', borderRadius: '50%', width: '28px', height: '28px',
+            cursor: 'pointer', fontSize: '14px', fontWeight: 'bold'
           }}
-          title="Ayuda y Guía Rápida"
+          title="Ayuda"
         >
           ?
         </button>
@@ -266,60 +353,33 @@ const App = () => {
       <div style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '20px',
+        padding: '15px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '15px',
         backgroundImage: 'linear-gradient(#e5ddd5 2px, transparent 2px), linear-gradient(90deg, #e5ddd5 2px, transparent 2px)',
         backgroundSize: '20px 20px',
         backgroundBlendMode: 'multiply'
       }}>
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            style={{
-              alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-              backgroundColor: msg.role === 'user' ? '#dcf8c6' : '#ffffff',
-              color: '#303030',
-              padding: '12px 16px',
-              borderRadius: msg.role === 'user' ? '12px 0 12px 12px' : '0 12px 12px 12px',
-              maxWidth: '85%',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-              position: 'relative'
-            }}
-          >
-            <MarkdownRenderer text={msg.text} />
-            <div style={{
-              fontSize: '10px',
-              color: '#999',
-              textAlign: 'right',
-              marginTop: '5px'
-            }}>
-              {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </div>
-          </div>
+        {/* Intro Date Stamp Style */}
+        <div style={{ textAlign: 'center', marginBottom: '15px', opacity: 0.6, fontSize: '12px' }}>
+          {new Date().toLocaleDateString()}
+        </div>
+
+        {messages.map((msg, idx) => (
+          <MessageBubble key={idx} message={msg} />
         ))}
 
         {isLoading && (
-          <div style={{
-            alignSelf: 'flex-start',
-            backgroundColor: '#ffffff',
-            padding: '12px 16px',
-            borderRadius: '0 12px 12px 12px',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px'
-          }}>
-            <div className="dot" style={{width: 8, height: 8, background: '#999', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both'}} />
-            <div className="dot" style={{width: 8, height: 8, background: '#999', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both', animationDelay: '0.16s'}} />
-            <div className="dot" style={{width: 8, height: 8, background: '#999', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both', animationDelay: '0.32s'}} />
-            <style>{`
-              @keyframes bounce {
-                0%, 80%, 100% { transform: scale(0); }
-                40% { transform: scale(1); }
-              }
-            `}</style>
+          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '10px' }}>
+             <div style={{
+                padding: '10px 15px',
+                borderRadius: '15px',
+                borderTopLeftRadius: '0',
+                backgroundColor: 'var(--bot-msg-bg)',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+             }}>
+               <TypingIndicator />
+             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -327,146 +387,57 @@ const App = () => {
 
       {/* Input Area */}
       <div style={{
-        padding: '10px',
         backgroundColor: '#f0f0f0',
+        padding: '10px',
         display: 'flex',
         gap: '10px',
         alignItems: 'center'
       }}>
         <input
           type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Escribe tu respuesta..."
+          placeholder="Escribe tu respuesta aquí..."
           style={{
             flex: 1,
-            padding: '12px 20px',
-            borderRadius: '24px',
+            padding: '12px 15px',
+            borderRadius: '25px',
             border: 'none',
-            fontSize: '16px',
             outline: 'none',
-            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
+            fontSize: '16px',
+            backgroundColor: 'white'
           }}
           disabled={isLoading}
         />
         <button
           onClick={handleSend}
-          disabled={isLoading || !inputValue.trim()}
+          disabled={isLoading || !inputText.trim()}
           style={{
+            backgroundColor: 'var(--primary-color)',
+            color: 'white',
+            border: 'none',
             width: '45px',
             height: '45px',
             borderRadius: '50%',
-            backgroundColor: '#005c99',
-            color: 'white',
-            border: 'none',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-            opacity: (isLoading || !inputValue.trim()) ? 0.6 : 1
+            opacity: isLoading ? 0.7 : 1
           }}
         >
+          {/* Send Icon SVG */}
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
           </svg>
         </button>
       </div>
 
-      {/* Help Modal Overlay */}
       {showHelp && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          zIndex: 20,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px'
-        }}
-        onClick={() => setShowHelp(false)}
-        >
-          <div style={{
-            backgroundColor: 'white',
-            padding: '25px',
-            borderRadius: '15px',
-            maxWidth: '100%',
-            width: '400px',
-            boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
-            maxHeight: '80%',
-            overflowY: 'auto'
-          }}
-          onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ marginTop: 0, color: '#005c99', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
-              Guía Rápida 🎓
-            </h2>
-            <div style={{ fontSize: '14px', lineHeight: '1.6', color: '#444' }}>
-              <p><strong>¿Qué es esto?</strong><br/>
-              Un simulacro rápido e inteligente para medir tu nivel real rumbo al EXANI-II 2026.</p>
-              
-              <p><strong>¿Cómo funciona?</strong></p>
-              <ol style={{ paddingLeft: '20px' }}>
-                <li><strong>Datos:</strong> MiguelBot te pedirá info básica para personalizar tus consejos.</li>
-                <li><strong>El Examen:</strong> Recibirás 30 preguntas (Comprensión, Mate y Redacción) en bloques de 5.</li>
-                <li><strong>Respuestas:</strong> Solo escribe la letra y número (ej: "1-A, 2-C") o solo las letras en orden.</li>
-                <li><strong>Resultados:</strong> Al finalizar, obtendrás tu puntaje estimado y un plan de acción.</li>
-              </ol>
-              
-              <p><strong>Tips:</strong></p>
-              <ul style={{ paddingLeft: '20px' }}>
-                <li>Sé honesto, no busques las respuestas.</li>
-                <li>Tarda aprox. 10-15 minutos.</li>
-                <li>Si te equivocas al escribir, MiguelBot te avisará.</li>
-              </ul>
-              <p style={{fontStyle: 'italic', fontSize: '12px', color: '#666'}}>
-                Tu progreso se guarda automáticamente en este dispositivo.
-              </p>
-            </div>
-            
-            <button 
-              onClick={() => setShowHelp(false)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                marginTop: '15px',
-                backgroundColor: '#005c99',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '16px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              ¡Entendido, volver al chat!
-            </button>
-
-            <button 
-              onClick={handleReset}
-              style={{
-                width: '100%',
-                padding: '10px',
-                marginTop: '10px',
-                backgroundColor: 'transparent',
-                color: '#d32f2f',
-                border: '1px solid #d32f2f',
-                borderRadius: '8px',
-                fontSize: '14px',
-                cursor: 'pointer'
-              }}
-            >
-              ⚠️ Borrar progreso y Reiniciar
-            </button>
-          </div>
-        </div>
+        <HelpModal onClose={() => setShowHelp(false)} onReset={resetChat} />
       )}
-    </div>
+    </>
   );
 };
 
