@@ -114,11 +114,13 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   try {
     const accessToken = await getPayPalAccessToken(clientId, clientSecret);
+    const requestId = globalThis.crypto?.randomUUID?.() || `pp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
+        'PayPal-Request-Id': requestId,
       },
       body: JSON.stringify({
         intent: 'CAPTURE',

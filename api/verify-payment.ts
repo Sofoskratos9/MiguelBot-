@@ -114,6 +114,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
             headers: {
               Authorization: `Bearer ${accessToken}`,
               'Content-Type': 'application/json',
+              'PayPal-Request-Id': `cap-${orderId}`,
             },
           }
         );
