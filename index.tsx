@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createRoot } from 'react-dom/client';
 import confetti from 'canvas-confetti';
 import {
+  ArrowRight,
   BookOpen,
+  Brain,
   Calculator,
   Check,
   CheckCircle2,
@@ -14,9 +16,9 @@ import {
   HelpCircle,
   KeyRound,
   Menu,
-  MessageSquare,
   RotateCcw,
   Send,
+  Shield,
   ShieldCheck,
   Sparkles,
   Trash2,
@@ -25,7 +27,7 @@ import {
 import './index.css';
 import { MarkdownRenderer } from './src/MarkdownRenderer';
 import { StudyTools } from './src/StudyTools';
-import { StudyKitSection } from './src/StudyKitSection';
+import { StudyKitSection, TOKENS_STORAGE_KEY, type ProductId } from './src/StudyKitSection';
 import { EXANI_SYSTEM_INSTRUCTION } from './api/_systemPrompt';
 import {
   STORAGE_KEY,
@@ -41,7 +43,7 @@ import {
   type Message,
 } from './src/diagnosticUtils';
 
-type WorkspaceTab = 'diagnostic' | 'tools' | 'kit';
+type WorkspaceTab = 'landing' | 'diagnostic' | 'tools' | 'kit';
 
 const getSessionApiKey = (): string => {
   try {
@@ -81,7 +83,7 @@ const consumeSseStream = async (
         const delta = parsed.choices?.[0]?.delta?.content ?? parsed.choices?.[0]?.message?.content ?? '';
         if (delta) onDelta(delta);
       } catch {
-        // Ignore partial or non-JSON keepalive lines
+        // Ignore partial keepalive frames
       }
     }
   }
@@ -127,7 +129,7 @@ const MessageBubble: React.FC<{
             {isReport && onOpenKit && (
               <button type="button" className="msg-action-btn is-primary" onClick={onOpenKit}>
                 <FileText size={13} />
-                Comprar y Descargar Kit PDF
+                Descargar Pack 50 Reactivos
               </button>
             )}
             <button type="button" className="msg-action-btn" onClick={handleCopy}>
@@ -178,10 +180,7 @@ const HelpModal: React.FC<{
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
       <div className="modal-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h3
-            id="help-modal-title"
-            style={{ margin: 0, fontFamily: 'var(--font-heading)', color: 'var(--navy-900)', fontSize: '20px' }}
-          >
+          <h3 id="help-modal-title" className="modal-title-serif" style={{ margin: 0, fontSize: '20px' }}>
             Guía de Uso y Privacidad
           </h3>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Cerrar ayuda">
@@ -190,45 +189,45 @@ const HelpModal: React.FC<{
         </div>
 
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.55, marginTop: 0 }}>
-          Plataforma académica de diagnóstico y preparación EXANI-II UAA 2026 — Método Miguel Neftalí.
+          Plataforma académica de diagnóstico y alto rendimiento EXANI-II UAA 2026 — Miguel López.
         </p>
         <ul style={{ paddingLeft: '18px', fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
           <li style={{ marginBottom: '6px' }}>
-            <strong>Diagnóstico (30 reactivos):</strong> Responde las 4 preguntas iniciales y resuelve 6 bloques de 5 reactivos usando los botones rápidos A/B/C o el teclado.
+            <strong>Diagnóstico (30 reactivos):</strong> Responde las 4 preguntas iniciales y resuelve 6 bloques de 5 reactivos usando los botones rápidos A/B/C.
           </li>
           <li style={{ marginBottom: '6px' }}>
-            <strong>Herramientas reales:</strong> Accede a la Calculadora CENEVAL con semáforo UAA, el Entrenador de Respiración 4-7-8 y la práctica de Desarme Filosófico.
+            <strong>Laboratorio de Herramientas:</strong> Calculadora CENEVAL 700–1300, Simulador EXANI-II, Entrenador 4-7-8 / 4-4-4-4 y Orientador RIASEC.
           </li>
           <li style={{ marginBottom: '6px' }}>
-            <strong>Kit PDF descargable:</strong> Descarga la muestra gratuita en PDF y, tras pago verificado o código de acceso, obtén el cuadernillo completo.
+            <strong>Packs con Descarga Inmediata:</strong> Paga de forma segura con Stripe o PayPal y descarga al instante tu PDF y audio WAV sin salir de la plataforma.
           </li>
           <li>
-            <strong>Privacidad local:</strong> Tus datos se guardan exclusivamente en tu navegador y puedes borrarlos en un clic.
+            <strong>Privacidad local:</strong> Tus datos y tokens de descarga permanecen en tu navegador y puedes borrarlos en un clic.
           </li>
         </ul>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '20px' }}>
-          <button type="button" className="btn btn-primary" onClick={onClose}>
+          <button type="button" className="btn btn-gold" onClick={onClose}>
             Continuar
           </button>
 
           {!confirmingReset ? (
             <button type="button" className="btn btn-danger-soft" onClick={() => setConfirmingReset(true)}>
               <Trash2 size={15} />
-              Reiniciar y borrar datos locales
+              Reiniciar y borrar progreso local
             </button>
           ) : (
             <div
               style={{
-                backgroundColor: 'var(--red-50)',
-                border: '1px solid #fecaca',
+                backgroundColor: 'rgba(220, 38, 38, 0.14)',
+                border: '1px solid rgba(248, 113, 113, 0.35)',
                 borderRadius: '10px',
                 padding: '12px',
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '13px', color: 'var(--red-700)', marginBottom: '10px', fontWeight: 600 }}>
-                ¿Borrar todo el progreso guardado en este navegador?
+              <div style={{ fontSize: '13px', color: '#fca5a5', marginBottom: '10px', fontWeight: 600 }}>
+                ¿Borrar el avance del diagnóstico guardado en este navegador?
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
@@ -242,7 +241,7 @@ const HelpModal: React.FC<{
                 <button
                   type="button"
                   className="btn"
-                  style={{ flex: 1, padding: '8px', background: 'var(--red-600)', color: '#fff' }}
+                  style={{ flex: 1, padding: '8px', background: '#dc2626', color: '#fff' }}
                   onClick={onReset}
                 >
                   Sí, borrar
@@ -254,11 +253,158 @@ const HelpModal: React.FC<{
           {hasManualSessionKey && (
             <button type="button" className="btn btn-secondary" onClick={onClearSessionKey}>
               <KeyRound size={15} />
-              Cambiar clave de acceso de sesión
+              Cambiar clave de sesión DeepSeek
             </button>
           )}
         </div>
       </div>
+    </div>
+  );
+};
+
+// --- Landing Showcase View (Obsidian + Champagne Gold) ---
+
+const LandingView: React.FC<{
+  onStartDiagnostic: () => void;
+  onOpenTools: () => void;
+  onOpenPacks: () => void;
+}> = ({ onStartDiagnostic, onOpenTools, onOpenPacks }) => {
+  return (
+    <div className="landing-viewport">
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="hero-pill">
+          <Sparkles size={13} />
+          <span>Estrategia Académica &amp; Neuro-Aprendizaje · UAA 2026</span>
+        </div>
+
+        <h1 className="hero-title">
+          Domina el EXANI-II con <span className="text-gold">precisión estratégica</span> y cero improvisación
+        </h1>
+
+        <p className="hero-desc">
+          Evalúa tu nivel real en 10 minutos con nuestro diagnóstico adaptativo, entrena con 50 reactivos comentados y descarga herramientas diseñadas para maximizar tu puntaje CENEVAL.
+        </p>
+
+        <div className="hero-actions">
+          <button type="button" className="btn btn-gold hero-cta" onClick={onStartDiagnostic}>
+            <Sparkles size={16} />
+            Comenzar Diagnóstico Gratuito
+          </button>
+          <button type="button" className="btn btn-secondary hero-cta" onClick={onOpenPacks}>
+            <Download size={16} />
+            Ver Packs Descargables
+          </button>
+          <button type="button" className="btn btn-secondary hero-cta" onClick={onOpenTools}>
+            <Calculator size={16} />
+            Calculadora &amp; Simulador
+          </button>
+        </div>
+
+        <div className="hero-metrics">
+          <div className="metric-card">
+            <strong>30 Reactivos</strong>
+            <span>Diagnóstico personalizado por área UAA</span>
+          </div>
+          <div className="metric-card">
+            <strong>50 Preguntas + WAV</strong>
+            <span>Descarga directa tras Stripe o PayPal</span>
+          </div>
+          <div className="metric-card">
+            <strong>700 – 1300 pts</strong>
+            <span>Proyección real en escala CENEVAL</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Preview of the 3 High-Performance Products (matches screenshot) */}
+      <section className="landing-packs-preview" aria-labelledby="landing-packs-heading">
+        <div className="packs-hero-header" style={{ marginBottom: '26px' }}>
+          <h2 id="landing-packs-heading" className="packs-h1" style={{ fontSize: 'clamp(28px, 4vw, 38px)' }}>
+            Herramientas de Alto Rendimiento
+          </h2>
+          <p className="packs-sub">
+            Tecnología educativa de bajo costo y alto impacto. Paga con Stripe o PayPal y descarga tus archivos directo en pantalla.
+          </p>
+        </div>
+
+        <div className="packs-grid">
+          <article className="pack-card is-neuro" onClick={onOpenPacks} style={{ cursor: 'pointer' }}>
+            <div className="pack-visual-band">
+              <span className="pack-badge">PDF + Audio WAV</span>
+              <div className="pack-icon-wrap">
+                <Brain size={44} strokeWidth={1.6} />
+              </div>
+            </div>
+            <div className="pack-body">
+              <h3 className="pack-title">Kit de Neuro-Aprendizaje</h3>
+              <p className="pack-tagline">
+                Plantillas de estudio basadas en ciclos ultradianos (90/20), método Feynman y audio binaural 40 Hz para enfoque profundo.
+              </p>
+              <div className="pack-footer">
+                <div className="pack-price-line">
+                  <span className="pack-price">$99 MXN</span>
+                  <span className="pack-compare">$299</span>
+                </div>
+                <button type="button" className="btn btn-obsidian" style={{ width: '100%' }}>
+                  Comprar y Descargar
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <article className="pack-card is-featured" onClick={onOpenPacks} style={{ cursor: 'pointer' }}>
+            <div className="pack-visual-band">
+              <span className="pack-badge">Best Seller · Edición 2026</span>
+              <div className="pack-icon-wrap">
+                <FileText size={44} strokeWidth={1.6} />
+              </div>
+            </div>
+            <div className="pack-body">
+              <h3 className="pack-title">Banco de 50 Reactivos EXANI-II</h3>
+              <p className="pack-tagline">
+                50 preguntas originales basadas en el temario oficial CENEVAL 2026 con simulacro interactivo y soluciones comentadas.
+              </p>
+              <div className="pack-footer">
+                <div className="pack-price-line">
+                  <span className="pack-price">$149 MXN</span>
+                  <span className="pack-compare">$499</span>
+                </div>
+                <button type="button" className="btn btn-gold" style={{ width: '100%' }}>
+                  Comprar y Descargar Pack
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <article className="pack-card is-nsdr" onClick={onOpenPacks} style={{ cursor: 'pointer' }}>
+            <div className="pack-visual-band">
+              <span className="pack-badge">Audio + Guía PDF</span>
+              <div className="pack-icon-wrap">
+                <Shield size={44} strokeWidth={1.6} />
+              </div>
+            </div>
+            <div className="pack-body">
+              <h3 className="pack-title">Protocolo Anti-Ansiedad NSDR</h3>
+              <p className="pack-tagline">
+                Sesión sonora de 10 min basada en NSDR (Alpha → Theta) y respiración táctica para reducir estrés antes del examen.
+              </p>
+              <div className="pack-footer">
+                <div className="pack-price-line">
+                  <span className="pack-price">$79 MXN</span>
+                  <span className="pack-compare">$199</span>
+                </div>
+                <button type="button" className="btn btn-obsidian" style={{ width: '100%' }}>
+                  Obtener Audio y Guía
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
     </div>
   );
 };
@@ -271,7 +417,8 @@ const App = () => {
   const [manualKeyInput, setManualKeyInput] = useState('');
   const [activeTab, setActiveTab] = useState<WorkspaceTab>(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.has('payment') ? 'kit' : 'diagnostic';
+    if (params.has('payment')) return 'kit';
+    return loadStoredMessages().length > 0 ? 'diagnostic' : 'landing';
   });
   const [messages, setMessages] = useState<Message[]>(() => loadStoredMessages());
   const [hasStarted, setHasStarted] = useState<boolean>(() => loadStoredMessages().length > 0);
@@ -283,6 +430,7 @@ const App = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCopied, setSidebarCopied] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [unlockedProducts, setUnlockedProducts] = useState<ProductId[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -292,8 +440,9 @@ const App = () => {
   const progress = useMemo(() => deriveDiagnosticProgress(messages), [messages]);
   const contextualChips = useMemo(() => getContextualChips(messages, progress), [messages, progress]);
   const hasEvaluatorAccess = serverStatus === 'ready' || Boolean(sessionApiKey);
+  const hasReactivosPack = unlockedProducts.includes('reactivos-pack');
 
-  // Check whether server-side DEEPSEEK_API_KEY is configured
+  // Check DeepSeek config + verify any saved product tokens on mount
   useEffect(() => {
     let cancelled = false;
 
@@ -315,7 +464,33 @@ const App = () => {
       }
     };
 
+    const verifySavedPurchases = async () => {
+      try {
+        const raw = localStorage.getItem(TOKENS_STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        const tokenList = Object.values(parsed).filter((v): v is string => typeof v === 'string' && v.length > 0);
+        if (tokenList.length === 0) return;
+
+        const res = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tokens: tokenList }),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { unlockedProductIds?: ProductId[] };
+          if (!cancelled && Array.isArray(data.unlockedProductIds)) {
+            setUnlockedProducts(data.unlockedProductIds);
+          }
+        }
+      } catch {
+        // Ignore offline/invalid token cache
+      }
+    };
+
     checkConfig();
+    verifySavedPurchases();
+
     const stored = loadStoredMessages();
     if (stored.length > 0 && deriveDiagnosticProgress(stored).stage === 'completed') {
       confettiFiredRef.current = true;
@@ -429,7 +604,7 @@ const App = () => {
                 const delta = parsed.choices?.[0]?.delta?.content || '';
                 if (delta) appendDelta(delta);
               } catch {
-                // Ignore malformed SSE lines
+                // Ignore malformed SSE frames
               }
             }
           }
@@ -481,7 +656,7 @@ const App = () => {
     }
   }, [messages, isLoading, isStreaming]);
 
-  // Fire subtle confetti when diagnostic report finishes for the first time
+  // Fire subtle confetti when diagnostic report finishes
   useEffect(() => {
     if (!isLoading && !isStreaming && progress.stage === 'completed' && !confettiFiredRef.current) {
       confettiFiredRef.current = true;
@@ -489,25 +664,22 @@ const App = () => {
         particleCount: 65,
         spread: 62,
         origin: { y: 0.72 },
-        colors: ['#1e3a8a', '#10b981', '#2563eb', '#34d399'],
+        colors: ['#d4af37', '#10b981', '#e5c158', '#60a5fa'],
       });
     }
   }, [isLoading, isStreaming, progress.stage]);
 
-  // Clear quick answer selections when active question block changes
   const activeBlockKey = progress.activeBlock.join(',');
   useEffect(() => {
     setQuickAnswers({});
   }, [activeBlockKey]);
 
-  // Auto-scroll chat viewport
   useEffect(() => {
     if (activeTab === 'diagnostic') {
       messagesEndRef.current?.scrollIntoView({ behavior: isStreaming ? 'auto' : 'smooth', block: 'end' });
     }
   }, [messages, isLoading, isStreaming, activeTab]);
 
-  // Auto-resize composer textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -516,6 +688,7 @@ const App = () => {
   }, [inputText]);
 
   const startDiagnostic = async () => {
+    setActiveTab('diagnostic');
     if (!hasEvaluatorAccess || isLoading) return;
     setHasStarted(true);
     await streamModelResponse([{ role: 'user', text: 'Hola' }], '__INIT__');
@@ -638,456 +811,454 @@ const App = () => {
   const selectedInBlock = progress.activeBlock.filter((n) => quickAnswers[n]).length;
 
   return (
-    <div className="app-shell">
-      {drawerOpen && <div className="drawer-backdrop" onClick={() => setDrawerOpen(false)} aria-hidden="true" />}
-
-      {/* Left Context & Progress Sidebar */}
-      <aside className={`sidebar ${drawerOpen ? 'is-open' : ''}`} aria-label="Progreso del diagnóstico">
-        <div>
-          <div className="sidebar-brand">
-            <div className="brand-mark">
-              <GraduationCap size={22} />
-            </div>
-            <div>
-              <div className="brand-title">Miguel Neftalí</div>
-              <div className="brand-subtitle">Preparación EXANI-II · UAA 2026</div>
-            </div>
-          </div>
-
-          <div className="sidebar-section">
-            <div className="sidebar-label">Avance Diagnóstico</div>
-            <div className="progress-panel">
-              <div className="progress-header">
-                <span className="progress-title">Reactivos resueltos</span>
-                <span className="progress-count">{progress.answeredCount} / 30</span>
-              </div>
-              <div
-                className="progress-track"
-                role="progressbar"
-                aria-valuenow={progressPercent}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              >
-                <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
-              </div>
-
-              <div className="stage-list">
-                <div
-                  className={`stage-item ${
-                    progress.stage === 'quiz' || progress.stage === 'completed'
-                      ? 'is-done'
-                      : progress.stage === 'onboarding'
-                        ? 'is-active'
-                        : ''
-                  }`}
-                >
-                  <CheckCircle2 size={15} />
-                  <span>1. Perfil del aspirante</span>
-                </div>
-                <div
-                  className={`stage-item ${
-                    progress.stage === 'completed' ? 'is-done' : progress.stage === 'quiz' ? 'is-active' : ''
-                  }`}
-                >
-                  <BookOpen size={15} />
-                  <span>2. Cuestionario (30 reactivos)</span>
-                </div>
-                <div className={`stage-item ${progress.stage === 'completed' ? 'is-done' : ''}`}>
-                  <Sparkles size={15} />
-                  <span>3. Diagnóstico & Plan UAA</span>
-                </div>
-              </div>
-
-              <div className="module-pills">
-                <div
-                  className={`module-pill ${
-                    progress.answeredCount >= 10 || progress.stage === 'completed'
-                      ? 'is-done'
-                      : progress.stage === 'quiz' && progress.answeredCount < 10
-                        ? 'is-active'
-                        : ''
-                  }`}
-                >
-                  <strong>Lectura</strong>
-                  <span>1–10</span>
-                </div>
-                <div
-                  className={`module-pill ${
-                    progress.answeredCount >= 20 || progress.stage === 'completed'
-                      ? 'is-done'
-                      : progress.answeredCount >= 10 && progress.answeredCount < 20
-                        ? 'is-active'
-                        : ''
-                  }`}
-                >
-                  <strong>Analítico</strong>
-                  <span>11–20</span>
-                </div>
-                <div
-                  className={`module-pill ${
-                    progress.stage === 'completed'
-                      ? 'is-done'
-                      : progress.answeredCount >= 20 && progress.answeredCount < 30
-                        ? 'is-active'
-                        : ''
-                  }`}
-                >
-                  <strong>Redacción</strong>
-                  <span>21–30</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div className="sidebar-actions">
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => {
-                setActiveTab('kit');
-                setDrawerOpen(false);
-              }}
-            >
-              <FileText size={15} />
-              Kit PDF & Descargas
-            </button>
-
-            {progress.latestReportText && (
-              <>
-                <button type="button" className="btn btn-emerald" onClick={handleSidebarCopyReport}>
-                  {sidebarCopied ? <Check size={15} /> : <Copy size={15} />}
-                  {sidebarCopied ? 'Reporte Copiado' : 'Copiar Diagnóstico'}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => downloadReportAsText(progress.latestReportText!)}
-                >
-                  <Download size={15} />
-                  Descargar Resumen (.txt)
-                </button>
-              </>
-            )}
-
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => {
-                setDrawerOpen(false);
-                setShowHelp(true);
-              }}
-            >
-              <HelpCircle size={15} />
-              Guía y Privacidad
-            </button>
-
-            {hasStarted && (
+    <div className="platform-frame">
+      {/* Top Editorial Navbar matching screenshot */}
+      <header className="top-navbar">
+        <div className="top-navbar-inner">
+          <div className="nav-brand-left">
+            {activeTab === 'diagnostic' && (
               <button
                 type="button"
-                className="btn btn-danger-soft"
-                onClick={() => {
-                  setDrawerOpen(false);
-                  setShowHelp(true);
-                }}
+                className="icon-btn mobile-menu-btn"
+                onClick={() => setDrawerOpen(true)}
+                aria-label="Abrir progreso del diagnóstico"
               >
-                <RotateCcw size={15} />
-                Reiniciar Diagnóstico
+                <Menu size={18} />
               </button>
             )}
-          </div>
 
-          <div className="privacy-note">
-            <ShieldCheck size={16} style={{ flexShrink: 0, marginTop: '1px' }} />
-            <span>
-              <strong>Privacidad local:</strong> Tus respuestas permanecen en tu navegador y nunca se venden ni comparten con terceros.
-            </span>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Workspace */}
-      <main className="chat-main">
-        <header className="chat-header">
-          <div className="header-left">
             <button
               type="button"
-              className="icon-btn mobile-menu-btn"
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Abrir progreso y opciones"
+              className="brand-logo-btn"
+              onClick={() => setActiveTab('landing')}
+              aria-label="Ir al inicio"
             >
-              <Menu size={18} />
+              <div className="monogram-box">M</div>
+              <div className="monogram-text">
+                <span className="monogram-name">MIGUEL LÓPEZ</span>
+                <span className="monogram-role">ESTRATEGA EDUCATIVO</span>
+              </div>
             </button>
-
-            <nav className="nav-tabs" aria-label="Secciones de la plataforma">
-              <button
-                type="button"
-                className={`nav-tab ${activeTab === 'diagnostic' ? 'is-active' : ''}`}
-                onClick={() => setActiveTab('diagnostic')}
-              >
-                <MessageSquare size={15} />
-                <span>Diagnóstico</span>
-              </button>
-              <button
-                type="button"
-                className={`nav-tab ${activeTab === 'tools' ? 'is-active' : ''}`}
-                onClick={() => setActiveTab('tools')}
-              >
-                <Calculator size={15} />
-                <span>Herramientas</span>
-              </button>
-              <button
-                type="button"
-                className={`nav-tab ${activeTab === 'kit' ? 'is-active' : ''}`}
-                onClick={() => setActiveTab('kit')}
-              >
-                <FileText size={15} />
-                <span>Kit PDF</span>
-              </button>
-            </nav>
           </div>
 
-          <div className="header-right">
-            <div className="mobile-progress-pill" aria-label="Progreso">
-              {progress.answeredCount}/30
-            </div>
+          <nav className="top-nav-links" aria-label="Navegación principal">
+            <button
+              type="button"
+              className={`top-nav-link ${activeTab === 'landing' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('landing')}
+            >
+              Inicio
+            </button>
+            <button
+              type="button"
+              className={`top-nav-link ${activeTab === 'diagnostic' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('diagnostic')}
+            >
+              Diagnóstico
+            </button>
+            <button
+              type="button"
+              className={`top-nav-link ${activeTab === 'tools' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('tools')}
+            >
+              Herramientas
+            </button>
+            <button
+              type="button"
+              className={`top-nav-link ${activeTab === 'kit' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('kit')}
+            >
+              Packs
+              {unlockedProducts.length > 0 && <span className="nav-dot-unlocked" title="Tienes packs desbloqueados" />}
+            </button>
+          </nav>
+
+          <div className="top-nav-right">
             <button
               type="button"
               className="icon-btn"
               onClick={() => setShowHelp(true)}
               aria-label="Ayuda y privacidad"
-              title="Ayuda y privacidad"
+              title="Guía y privacidad"
             >
               <HelpCircle size={18} />
             </button>
+            <button
+              type="button"
+              className="btn btn-gold btn-nav-cta"
+              onClick={() => {
+                setActiveTab('diagnostic');
+                if (!hasStarted && hasEvaluatorAccess && !isLoading) {
+                  void startDiagnostic();
+                }
+              }}
+            >
+              Diagnóstico Gratuito
+            </button>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {activeTab === 'tools' ? (
-          <StudyTools />
-        ) : activeTab === 'kit' ? (
-          <StudyKitSection latestReportText={progress.latestReportText} />
-        ) : (!hasEvaluatorAccess && serverStatus !== 'checking') || errorMsg ? (
-          <div className="messages-viewport">
-            <div className="setup-card" style={{ margin: 'auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                <div className="brand-mark">
-                  <KeyRound size={20} />
+      {/* Main Content Area */}
+      {activeTab === 'landing' ? (
+        <LandingView
+          onStartDiagnostic={() => {
+            setActiveTab('diagnostic');
+            if (!hasStarted && hasEvaluatorAccess && !isLoading) {
+              void startDiagnostic();
+            }
+          }}
+          onOpenTools={() => setActiveTab('tools')}
+          onOpenPacks={() => setActiveTab('kit')}
+        />
+      ) : activeTab === 'tools' ? (
+        <StudyTools hasReactivosPack={hasReactivosPack} onOpenPacks={() => setActiveTab('kit')} />
+      ) : activeTab === 'kit' ? (
+        <StudyKitSection
+          latestReportText={progress.latestReportText}
+          onUnlockedProductsChange={setUnlockedProducts}
+        />
+      ) : (
+        <div className="app-shell">
+          {drawerOpen && <div className="drawer-backdrop" onClick={() => setDrawerOpen(false)} aria-hidden="true" />}
+
+          {/* Left Context & Progress Sidebar */}
+          <aside className={`sidebar ${drawerOpen ? 'is-open' : ''}`} aria-label="Progreso del diagnóstico">
+            <div>
+              <div className="sidebar-label">Avance Diagnóstico EXANI-II</div>
+              <div className="progress-panel">
+                <div className="progress-header">
+                  <span className="progress-title">Reactivos resueltos</span>
+                  <span className="progress-count">{progress.answeredCount} / 30</span>
                 </div>
-                <div>
-                  <h1 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontSize: '21px', color: 'var(--navy-900)' }}>
-                    Activar Evaluador Diagnóstico
-                  </h1>
-                  <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-                    Las pestañas Herramientas y Kit PDF ya están disponibles sin configuración adicional.
-                  </p>
+                <div
+                  className="progress-track"
+                  role="progressbar"
+                  aria-valuenow={progressPercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
+                </div>
+
+                <div className="stage-list">
+                  <div
+                    className={`stage-item ${
+                      progress.stage === 'quiz' || progress.stage === 'completed'
+                        ? 'is-done'
+                        : progress.stage === 'onboarding'
+                          ? 'is-active'
+                          : ''
+                    }`}
+                  >
+                    <CheckCircle2 size={15} />
+                    <span>1. Perfil del aspirante</span>
+                  </div>
+                  <div
+                    className={`stage-item ${
+                      progress.stage === 'completed' ? 'is-done' : progress.stage === 'quiz' ? 'is-active' : ''
+                    }`}
+                  >
+                    <BookOpen size={15} />
+                    <span>2. Cuestionario (30 reactivos)</span>
+                  </div>
+                  <div className={`stage-item ${progress.stage === 'completed' ? 'is-done' : ''}`}>
+                    <Sparkles size={15} />
+                    <span>3. Diagnóstico &amp; Plan UAA</span>
+                  </div>
+                </div>
+
+                <div className="module-pills">
+                  <div
+                    className={`module-pill ${
+                      progress.answeredCount >= 10 || progress.stage === 'completed'
+                        ? 'is-done'
+                        : progress.stage === 'quiz' && progress.answeredCount < 10
+                          ? 'is-active'
+                          : ''
+                    }`}
+                  >
+                    <strong>Lectura</strong>
+                    <span>1–10</span>
+                  </div>
+                  <div
+                    className={`module-pill ${
+                      progress.answeredCount >= 20 || progress.stage === 'completed'
+                        ? 'is-done'
+                        : progress.answeredCount >= 10 && progress.answeredCount < 20
+                          ? 'is-active'
+                          : ''
+                    }`}
+                  >
+                    <strong>Analítico</strong>
+                    <span>11–20</span>
+                  </div>
+                  <div
+                    className={`module-pill ${
+                      progress.stage === 'completed'
+                        ? 'is-done'
+                        : progress.answeredCount >= 20 && progress.answeredCount < 30
+                          ? 'is-active'
+                          : ''
+                    }`}
+                  >
+                    <strong>Redacción</strong>
+                    <span>21–30</span>
+                  </div>
                 </div>
               </div>
-
-              <p style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--text-secondary)', marginBottom: '14px' }}>
-                {errorMsg || 'Configura la variable DEEPSEEK_API_KEY en el servidor (.env.local o Vercel) para habilitar el cuestionario interactivo de 30 reactivos.'}
-              </p>
-
-              <div
-                style={{
-                  backgroundColor: 'var(--surface-muted)',
-                  border: '1px solid var(--border-subtle)',
-                  padding: '11px 13px',
-                  borderRadius: '10px',
-                  fontSize: '13px',
-                  color: 'var(--text-secondary)',
-                  marginBottom: '16px',
-                }}
-              >
-                <strong>En local o Vercel:</strong> define <code>DEEPSEEK_API_KEY</code> en <code>.env.local</code> o Environment Variables (nunca se expone en el navegador).
-              </div>
-
-              <form onSubmit={handleSaveManualKey} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <label htmlFor="manual-api-key" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  O ingresa una clave de DeepSeek temporal solo para esta sesión:
-                </label>
-                <input
-                  id="manual-api-key"
-                  type="password"
-                  value={manualKeyInput}
-                  onChange={(e) => setManualKeyInput(e.target.value)}
-                  placeholder="sk-..."
-                  className="field-input"
-                />
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <button type="submit" className="btn btn-primary" disabled={!manualKeyInput.trim()}>
-                    Activar Evaluador
-                  </button>
-                  <button type="button" className="btn btn-secondary" onClick={() => setActiveTab('tools')}>
-                    <Compass size={15} />
-                    Ir a Herramientas
-                  </button>
-                </div>
-              </form>
             </div>
-          </div>
-        ) : (
-          <>
-            <div className="messages-viewport">
-              {!hasStarted && messages.length === 0 ? (
-                <section className="welcome-card" aria-label="Bienvenida al diagnóstico">
-                  <div className="welcome-eyebrow">Orientador Académico · UAA 2026</div>
-                  <h1 className="welcome-h1">Descubre tu puntaje real EXANI-II en 10 minutos</h1>
-                  <p className="welcome-desc">
-                    Evaluación guiada con el método de Miguel Neftalí. Resuelve 30 reactivos clave paso a paso y combina tu resultado con nuestra calculadora CENEVAL, entrenador anti-ansiedad 4-7-8 y cuadernillo descargable.
+
+            <div>
+              <div className="sidebar-actions">
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onClick={() => {
+                    setActiveTab('kit');
+                    setDrawerOpen(false);
+                  }}
+                >
+                  <FileText size={15} />
+                  Packs PDF &amp; Audio WAV
+                </button>
+
+                {progress.latestReportText && (
+                  <>
+                    <button type="button" className="btn btn-emerald" onClick={handleSidebarCopyReport}>
+                      {sidebarCopied ? <Check size={15} /> : <Copy size={15} />}
+                      {sidebarCopied ? 'Reporte Copiado' : 'Copiar Diagnóstico'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => downloadReportAsText(progress.latestReportText!)}
+                    >
+                      <Download size={15} />
+                      Descargar Resumen (.txt)
+                    </button>
+                  </>
+                )}
+
+                {hasStarted && (
+                  <button
+                    type="button"
+                    className="btn btn-danger-soft"
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      setShowHelp(true);
+                    }}
+                  >
+                    <RotateCcw size={15} />
+                    Reiniciar Diagnóstico
+                  </button>
+                )}
+              </div>
+
+              <div className="privacy-note" style={{ marginTop: '14px' }}>
+                <ShieldCheck size={16} style={{ flexShrink: 0, marginTop: '1px', color: 'var(--gold-400)' }} />
+                <span>
+                  <strong>Privacidad local:</strong> Tus respuestas se guardan solo en tu dispositivo.
+                </span>
+              </div>
+            </div>
+          </aside>
+
+          {/* Chat Evaluation Viewport */}
+          <main className="chat-main">
+            {(!hasEvaluatorAccess && serverStatus !== 'checking') || errorMsg ? (
+              <div className="messages-viewport">
+                <div className="setup-card" style={{ margin: 'auto' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                    <div className="monogram-box">
+                      <KeyRound size={20} />
+                    </div>
+                    <div>
+                      <h1 className="modal-title-serif" style={{ margin: 0, fontSize: '21px' }}>
+                        Activar Evaluador Diagnóstico
+                      </h1>
+                      <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                        Herramientas, Simulador y Packs están activos sin configuración adicional.
+                      </p>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--text-secondary)', marginBottom: '14px' }}>
+                    {errorMsg ||
+                      'Configura la variable DEEPSEEK_API_KEY en el servidor (Vercel Environment Variables o .env.local) para habilitar el cuestionario adaptativo de 30 reactivos.'}
                   </p>
 
-                  <div className="welcome-features">
-                    <div className="welcome-feature">
-                      <div className="welcome-feature-title">30 Reactivos Clave</div>
-                      <div className="welcome-feature-sub">Lectura, analítico-matemático y redacción en bloques de 5.</div>
-                    </div>
-                    <div className="welcome-feature">
-                      <div className="welcome-feature-title">Herramientas Reales</div>
-                      <div className="welcome-feature-sub">Calculadora 700–1300, guía socrática y práctica 4-7-8 incluidas.</div>
-                    </div>
-                    <div className="welcome-feature">
-                      <div className="welcome-feature-title">100% Confidencial</div>
-                      <div className="welcome-feature-sub">Guardado local en tu dispositivo; bórralo cuando quieras.</div>
-                    </div>
-                  </div>
-
-                  <div className="welcome-cta-row">
-                    <button type="button" className="btn btn-primary" onClick={startDiagnostic} disabled={isLoading}>
-                      <Sparkles size={16} />
-                      Comenzar Diagnóstico Gratis
-                    </button>
-                    <button type="button" className="btn btn-secondary" onClick={() => setActiveTab('tools')}>
-                      <Calculator size={15} />
-                      Explorar Herramientas
-                    </button>
-                  </div>
-                </section>
-              ) : (
-                <>
-                  {messages.map((msg, idx) => (
-                    <MessageBubble
-                      key={idx}
-                      message={msg}
-                      isStreamingBubble={isStreaming && idx === messages.length - 1 && msg.role === 'model' && !msg.isError}
-                      onRetry={handleRetry}
-                      onOpenKit={() => setActiveTab('kit')}
-                      isLoading={isLoading}
+                  <form onSubmit={handleSaveManualKey} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <label htmlFor="manual-api-key" className="field-label">
+                      O ingresa una clave de DeepSeek temporal para esta sesión:
+                    </label>
+                    <input
+                      id="manual-api-key"
+                      type="password"
+                      value={manualKeyInput}
+                      onChange={(e) => setManualKeyInput(e.target.value)}
+                      placeholder="sk-..."
+                      className="field-input"
                     />
-                  ))}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button type="submit" className="btn btn-gold" disabled={!manualKeyInput.trim()}>
+                        Activar Evaluador
+                      </button>
+                      <button type="button" className="btn btn-secondary" onClick={() => setActiveTab('tools')}>
+                        <Compass size={15} />
+                        Ir a Herramientas
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="messages-viewport">
+                  {!hasStarted && messages.length === 0 ? (
+                    <section className="welcome-card" aria-label="Bienvenida al diagnóstico">
+                      <div className="welcome-eyebrow">Orientador Académico · EXANI-II UAA 2026</div>
+                      <h1 className="welcome-h1">Descubre tu puntaje real EXANI-II en 10 minutos</h1>
+                      <p className="welcome-desc">
+                        Evaluación guiada con el método de Miguel López. Resuelve 30 reactivos clave paso a paso y combina tu reporte con nuestro simulador de 50 reactivos y packs descargables.
+                      </p>
 
-                  {isLoading && !isStreaming && (
-                    <div className="msg-row is-model">
-                      <div className="msg-avatar" aria-hidden="true">
-                        <GraduationCap size={16} />
+                      <div className="welcome-cta-row">
+                        <button type="button" className="btn btn-gold" onClick={startDiagnostic} disabled={isLoading}>
+                          <Sparkles size={16} />
+                          Comenzar Diagnóstico Gratis
+                        </button>
+                        <button type="button" className="btn btn-secondary" onClick={() => setActiveTab('kit')}>
+                          <FileText size={15} />
+                          Ver Packs Descargables
+                        </button>
                       </div>
-                      <div className="msg-bubble">
-                        <div className="typing-dots" aria-label="Preparando respuesta">
-                          <span className="typing-dot" />
-                          <span className="typing-dot" />
-                          <span className="typing-dot" />
+                    </section>
+                  ) : (
+                    <>
+                      {messages.map((msg, idx) => (
+                        <MessageBubble
+                          key={idx}
+                          message={msg}
+                          isStreamingBubble={isStreaming && idx === messages.length - 1 && msg.role === 'model' && !msg.isError}
+                          onRetry={handleRetry}
+                          onOpenKit={() => setActiveTab('kit')}
+                          isLoading={isLoading}
+                        />
+                      ))}
+
+                      {isLoading && !isStreaming && (
+                        <div className="msg-row is-model">
+                          <div className="msg-avatar" aria-hidden="true">
+                            <GraduationCap size={16} />
+                          </div>
+                          <div className="msg-bubble">
+                            <div className="typing-dots" aria-label="Preparando respuesta">
+                              <span className="typing-dot" />
+                              <span className="typing-dot" />
+                              <span className="typing-dot" />
+                            </div>
+                          </div>
                         </div>
+                      )}
+                    </>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Interactive Composer Dock */}
+                <div className="composer-dock">
+                  {!isLoading && progress.activeBlock.length > 0 && (
+                    <div className="quick-answer-bar" aria-label="Selector rápido de respuestas">
+                      <div className="quick-answer-top">
+                        <span className="quick-answer-title">
+                          <CheckCircle2 size={14} />
+                          Respuestas rápidas ({selectedInBlock}/{progress.activeBlock.length}):
+                        </span>
+                        {selectedInBlock > 0 && (
+                          <button
+                            type="button"
+                            className="btn btn-emerald btn-sm"
+                            onClick={handleSend}
+                          >
+                            Enviar bloque ({selectedInBlock}/{progress.activeBlock.length})
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="quick-answer-grid">
+                        {progress.activeBlock.map((qNum) => (
+                          <div key={qNum} className="q-selector-item">
+                            <span className="q-num">{qNum}</span>
+                            {(['A', 'B', 'C'] as const).map((opt) => (
+                              <button
+                                key={opt}
+                                type="button"
+                                className={`option-pill ${quickAnswers[qNum] === opt ? 'is-selected' : ''}`}
+                                onClick={() => handleSelectQuickOption(qNum, opt)}
+                                aria-pressed={quickAnswers[qNum] === opt}
+                                aria-label={`Pregunta ${qNum} opción ${opt}`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
-                </>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
 
-            {/* Interactive Composer Dock */}
-            <div className="composer-dock">
-              {!isLoading && progress.activeBlock.length > 0 && (
-                <div className="quick-answer-bar" aria-label="Selector rápido de respuestas">
-                  <div className="quick-answer-top">
-                    <span className="quick-answer-title">
-                      <CheckCircle2 size={14} />
-                      Respuestas rápidas ({selectedInBlock}/{progress.activeBlock.length}):
-                    </span>
-                    {selectedInBlock > 0 && (
-                      <button
-                        type="button"
-                        className="btn btn-emerald"
-                        style={{ padding: '5px 11px', fontSize: '12px' }}
-                        onClick={handleSend}
-                      >
-                        Enviar bloque ({selectedInBlock}/{progress.activeBlock.length})
-                      </button>
-                    )}
-                  </div>
+                  {!isLoading && hasStarted && contextualChips.length > 0 && (
+                    <div className="quick-chips" aria-label="Sugerencias rápidas">
+                      {contextualChips.map((chip) => (
+                        <button
+                          key={chip}
+                          type="button"
+                          className="chip-btn"
+                          onClick={() => sendUserMessage(chip)}
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
-                  <div className="quick-answer-grid">
-                    {progress.activeBlock.map((qNum) => (
-                      <div key={qNum} className="q-selector-item">
-                        <span className="q-num">{qNum}</span>
-                        {(['A', 'B', 'C'] as const).map((opt) => (
-                          <button
-                            key={opt}
-                            type="button"
-                            className={`option-pill ${quickAnswers[qNum] === opt ? 'is-selected' : ''}`}
-                            onClick={() => handleSelectQuickOption(qNum, opt)}
-                            aria-pressed={quickAnswers[qNum] === opt}
-                            aria-label={`Pregunta ${qNum} opción ${opt}`}
-                          >
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                  <div className="composer-row">
+                    <div className="composer-input-wrap">
+                      <textarea
+                        ref={textareaRef}
+                        rows={1}
+                        className="composer-textarea"
+                        value={inputText}
+                        onChange={(e) => setInputText(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={
+                          progress.activeBlock.length > 0
+                            ? 'Selecciona arriba o escribe (ej: 1-A, 2-B, 3-C...)'
+                            : 'Escribe tu respuesta aquí...'
+                        }
+                        disabled={isLoading}
+                        aria-label="Escribe tu respuesta"
+                      />
+                    </div>
 
-              {!isLoading && hasStarted && contextualChips.length > 0 && (
-                <div className="quick-chips" aria-label="Sugerencias rápidas">
-                  {contextualChips.map((chip) => (
                     <button
-                      key={chip}
                       type="button"
-                      className="chip-btn"
-                      onClick={() => sendUserMessage(chip)}
+                      className="send-btn"
+                      onClick={handleSend}
+                      disabled={!canSend}
+                      aria-label="Enviar mensaje"
+                      title="Enviar"
                     >
-                      {chip}
+                      <Send size={18} />
                     </button>
-                  ))}
+                  </div>
                 </div>
-              )}
-
-              <div className="composer-row">
-                <div className="composer-input-wrap">
-                  <textarea
-                    ref={textareaRef}
-                    rows={1}
-                    className="composer-textarea"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={
-                      progress.activeBlock.length > 0
-                        ? 'Selecciona arriba o escribe (ej: 1-A, 2-B, 3-C...)'
-                        : 'Escribe tu respuesta aquí...'
-                    }
-                    disabled={isLoading}
-                    aria-label="Escribe tu respuesta"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  className="send-btn"
-                  onClick={handleSend}
-                  disabled={!canSend}
-                  aria-label="Enviar mensaje"
-                  title="Enviar"
-                >
-                  <Send size={18} />
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-      </main>
+              </>
+            )}
+          </main>
+        </div>
+      )}
 
       {showHelp && (
         <HelpModal

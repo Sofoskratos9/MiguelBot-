@@ -85,17 +85,26 @@ export const timingSafeEquals = (a: string, b: string): boolean => {
   return crypto.timingSafeEqual(hashA, hashB);
 };
 
-export const createAccessToken = (subject: string, ttlDays = 30): string | null => {
+export const createAccessToken = (
+  subject: string,
+  productId = 'reactivos-pack',
+  ttlDays = 30
+): string | null => {
   const secret = getSigningSecret();
   if (!secret) return null;
 
   const exp = Date.now() + ttlDays * 24 * 60 * 60 * 1000;
-  const payload = Buffer.from(JSON.stringify({ sub: subject, exp }), 'utf8').toString('base64url');
+  const payload = Buffer.from(
+    JSON.stringify({ sub: subject, pid: productId, exp }),
+    'utf8'
+  ).toString('base64url');
   const sig = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
   return `${payload}.${sig}`;
 };
 
-export const verifyAccessToken = (token: string): { valid: boolean; subject?: string } => {
+export const verifyAccessToken = (
+  token: string
+): { valid: boolean; subject?: string; productId?: string } => {
   const secret = getSigningSecret();
   if (!secret || !token || !token.includes('.')) {
     return { valid: false };
@@ -112,12 +121,13 @@ export const verifyAccessToken = (token: string): { valid: boolean; subject?: st
   try {
     const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as {
       sub?: string;
+      pid?: string;
       exp?: number;
     };
     if (!parsed.exp || Date.now() > parsed.exp) {
       return { valid: false };
     }
-    return { valid: true, subject: parsed.sub };
+    return { valid: true, subject: parsed.sub, productId: parsed.pid || 'reactivos-pack' };
   } catch {
     return { valid: false };
   }

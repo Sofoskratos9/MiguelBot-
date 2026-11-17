@@ -1,6 +1,5 @@
+import { getServerCatalog, isValidProductId, type ProductId } from './_catalog.js';
 import {
-  getKitPriceMxn,
-  getKitProductName,
   getSafeOrigin,
   parseJsonBody,
   type ApiRequest,
@@ -37,9 +36,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const body = parseJsonBody<{ provider?: string; email?: string }>(req);
+  const body = parseJsonBody<{ provider?: string; productId?: string; email?: string }>(req);
   const provider = body.provider;
   const email = typeof body.email === 'string' ? body.email.trim() : '';
+  const productId: ProductId = isValidProductId(body.productId) ? body.productId : 'reactivos-pack';
 
   if (provider !== 'stripe' && provider !== 'paypal') {
     return res.status(400).json({ error: 'Proveedor de pago inválido.' });
@@ -56,8 +56,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return res.status(400).json({ error: 'No se pudo validar el dominio de retorno.' });
   }
 
-  const priceMxn = getKitPriceMxn();
-  const productName = getKitProductName();
+  const catalog = getServerCatalog();
+  const product = catalog[productId];
 
   if (provider === 'stripe') {
     const stripeKey = (process.env.STRIPE_SECRET_KEY || '').trim();
@@ -68,18 +68,19 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const params = new URLSearchParams();
     params.set('mode', 'payment');
     params.set('payment_method_types[0]', 'card');
-    params.set('success_url', `${origin}/?payment=success&provider=stripe&session_id={CHECKOUT_SESSION_ID}`);
-    params.set('cancel_url', `${origin}/?payment=cancelled`);
+    params.set(
+      'success_url',
+      `${origin}/?payment=success&provider=stripe&product=${product.id}&session_id={CHECKOUT_SESSION_ID}`
+    );
+    params.set('cancel_url', `${origin}/?payment=cancelled&product=${product.id}`);
+    params.set('metadata[product_id]', product.id);
     if (email) {
       params.set('customer_email', email);
     }
     params.set('line_items[0][price_data][currency]', 'mxn');
-    params.set('line_items[0][price_data][product_data][name]', productName);
-    params.set(
-      'line_items[0][price_data][product_data][description]',
-      'Cuadernillo completo EXANI-II UAA 2026: 15 reactivos resueltos, método de Desarme Filosófico y Plan de 4 semanas. Descarga directa inmediata.'
-    );
-    params.set('line_items[0][price_data][unit_amount]', String(priceMxn * 100));
+    params.set('line_items[0][price_data][product_data][name]', product.name);
+    params.set('line_items[0][price_data][product_data][description]', product.tagline);
+    params.set('line_items[0][price_data][unit_amount]', String(product.priceMxn * 100));
     params.set('line_items[0][quantity]', '1');
 
     try {
@@ -114,7 +115,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   try {
     const accessToken = await getPayPalAccessToken(clientId, clientSecret);
-    const requestId = globalThis.crypto?.randomUUID?.() || `pp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const requestId =
+      globalThis.crypto?.randomUUID?.() || `pp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
       method: 'POST',
       headers: {
@@ -126,22 +128,23 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         intent: 'CAPTURE',
         purchase_units: [
           {
-            description: productName.slice(0, 127),
+            custom_id: product.id,
+            description: product.name.slice(0, 127),
             amount: {
               currency_code: 'MXN',
-              value: priceMxn.toFixed(2),
+              value: product.priceMxn.toFixed(2),
             },
           },
         ],
         payment_source: {
           paypal: {
             experience_context: {
-              brand_name: 'Preparación EXANI-II UAA',
+              brand_name: 'Miguel López · EXANI-II UAA',
               locale: 'es-MX',
               shipping_preference: 'NO_SHIPPING',
               user_action: 'PAY_NOW',
-              return_url: `${origin}/?payment=success&provider=paypal`,
-              cancel_url: `${origin}/?payment=cancelled`,
+              return_url: `${origin}/?payment=success&provider=paypal&product=${product.id}`,
+              cancel_url: `${origin}/?payment=cancelled&product=${product.id}`,
             },
             ...(email ? { email_address: email } : {}),
           },

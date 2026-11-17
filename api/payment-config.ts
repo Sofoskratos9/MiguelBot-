@@ -1,4 +1,5 @@
-import { getKitPriceMxn, getKitProductName, type ApiRequest, type ApiResponse } from './_security.js';
+import { getServerCatalog } from './_catalog.js';
+import { type ApiRequest, type ApiResponse } from './_security.js';
 
 export default function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== 'GET') {
@@ -10,12 +11,12 @@ export default function handler(req: ApiRequest, res: ApiResponse) {
     (process.env.PAYPAL_CLIENT_ID || '').trim() && (process.env.PAYPAL_CLIENT_SECRET || '').trim()
   );
   const accessCodeEnabled = Boolean((process.env.KIT_ACCESS_CODES || '').trim());
+  const catalog = getServerCatalog();
 
   return res.status(200).json({
     stripeEnabled,
     paypalEnabled,
     accessCodeEnabled,
-    priceMxn: getKitPriceMxn(),
-    productName: getKitProductName(),
+    products: Object.values(catalog),
   });
 }

@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, BookOpenCheck, Calculator, CheckCircle2, Pause, Play, RotateCcw } from 'lucide-react';
+import {
+  Activity,
+  BookOpenCheck,
+  Brain,
+  Calculator,
+  CheckCircle2,
+  Compass,
+  Pause,
+  Play,
+  RotateCcw,
+  Sparkles,
+} from 'lucide-react';
+import { ExaniSimulator } from './ExaniSimulator';
 
 interface CareerTarget {
   id: string;
@@ -10,28 +22,73 @@ interface CareerTarget {
 
 const UAA_CAREERS: CareerTarget[] = [
   { id: 'medicina', label: 'Médico Cirujano (Alta demanda)', targetScore: 1160, note: 'Competencia muy alta en UAA' },
-  { id: 'estomatologia', label: 'Estomatología / Nutrición / Enfermería', targetScore: 1080, note: 'Demanda media-alta en Ciencias de la Salud' },
-  { id: 'psicologia', label: 'Psicología / Derecho / Comunicación', targetScore: 1030, note: 'Demanda media-alta en Ciencias Sociales' },
-  { id: 'ingenierias', label: 'Ingenierías / Arquitectura / Diseño', targetScore: 990, note: 'Mayor peso en Pensamiento Analítico' },
-  { id: 'admin', label: 'Administración / Contaduría / Mercadotecnia', targetScore: 950, note: 'Puntaje competitivo promedio UAA' },
+  {
+    id: 'estomatologia',
+    label: 'Estomatología / Nutrición / Enfermería',
+    targetScore: 1080,
+    note: 'Demanda media-alta en Ciencias de la Salud',
+  },
+  {
+    id: 'psicologia',
+    label: 'Psicología / Derecho / Comunicación',
+    targetScore: 1030,
+    note: 'Demanda media-alta en Ciencias Sociales',
+  },
+  {
+    id: 'ingenierias',
+    label: 'Ingenierías / Arquitectura / Diseño',
+    targetScore: 990,
+    note: 'Mayor peso en Pensamiento Analítico',
+  },
+  {
+    id: 'admin',
+    label: 'Administración / Contaduría / Mercadotecnia',
+    targetScore: 950,
+    note: 'Puntaje competitivo promedio UAA',
+  },
 ];
 
-type BreathPhase = 'idle' | 'inhale' | 'hold' | 'exhale' | 'done';
+type BreathMode = '4-7-8' | 'box';
+type BreathPhase = 'idle' | 'inhale' | 'hold' | 'exhale' | 'hold2' | 'done';
 
-const PHASE_DURATIONS: Record<'inhale' | 'hold' | 'exhale', number> = {
-  inhale: 4,
-  hold: 7,
-  exhale: 8,
+const DURATIONS_478 = { inhale: 4, hold: 7, exhale: 8, hold2: 0 };
+const DURATIONS_BOX = { inhale: 4, hold: 4, exhale: 4, hold2: 4 };
+
+// Mini RIASEC vocational matcher adapted cleanly from conetica-educativa
+type RiasecCode = 'R' | 'I' | 'A' | 'S' | 'E' | 'C';
+
+const RIASEC_MINI_QUESTIONS: Array<{ id: string; text: string; type: RiasecCode }> = [
+  { id: 'r1', text: 'Disfruto construir, reparar o trabajar con sistemas técnicos/herramientas.', type: 'R' },
+  { id: 'i1', text: 'Me apasiona analizar datos, resolver problemas científicos o médicos.', type: 'I' },
+  { id: 'a1', text: 'Valoro la creatividad visual, el diseño, la escritura o la arquitectura.', type: 'A' },
+  { id: 's1', text: 'Me motiva orientar, enseñar, cuidar o mejorar el bienestar de otras personas.', type: 'S' },
+  { id: 'e1', text: 'Disfruto liderar equipos, emprender proyectos y persuadir con ideas.', type: 'E' },
+  { id: 'c1', text: 'Soy metódico con números, organización financiera y estructuras claras.', type: 'C' },
+];
+
+const RIASEC_META: Record<RiasecCode, { name: string; careers: string }> = {
+  R: { name: 'Realista', careers: 'Ingeniería Mecatrónica · Arquitectura · Biotecnología' },
+  I: { name: 'Investigador', careers: 'Médico Cirujano · Desarrollo de Software · Ciencias' },
+  A: { name: 'Artístico', careers: 'Diseño Gráfico · Arquitectura · Comunicación Audiovisual' },
+  S: { name: 'Social', careers: 'Psicología · Enfermería · Nutrición · Docencia' },
+  E: { name: 'Emprendedor', careers: 'Derecho · Mercadotecnia Digital · Comercio Internacional' },
+  C: { name: 'Convencional', careers: 'Contaduría Pública · Administración · Finanzas' },
 };
 
-export const StudyTools: React.FC = () => {
+interface StudyToolsProps {
+  hasReactivosPack?: boolean;
+  onOpenPacks?: () => void;
+}
+
+export const StudyTools: React.FC<StudyToolsProps> = ({ hasReactivosPack = false, onOpenPacks }) => {
   // 1. CENEVAL Calculator state
   const [careerId, setCareerId] = useState<string>('medicina');
   const [lectura, setLectura] = useState<number>(7);
   const [analitico, setAnalitico] = useState<number>(6);
   const [redaccion, setRedaccion] = useState<number>(7);
 
-  // 2. 4-7-8 Breathing Trainer state
+  // 2. Breathing Trainer state (4-7-8 or Tactical 4-4-4-4 Box)
+  const [breathMode, setBreathMode] = useState<BreathMode>('4-7-8');
   const totalCycles = 4;
   const [breathState, setBreathState] = useState<{
     running: boolean;
@@ -41,15 +98,19 @@ export const StudyTools: React.FC = () => {
   }>({
     running: false,
     phase: 'idle',
-    secondsLeft: PHASE_DURATIONS.inhale,
+    secondsLeft: 4,
     cycle: 1,
   });
 
   // 3. Desarme Filosófico mini-practice state
   const [selectedPracticeOpt, setSelectedPracticeOpt] = useState<string | null>(null);
 
+  // 4. Mini RIASEC profile state
+  const [riasecChecks, setRiasecChecks] = useState<Record<string, boolean>>({});
+
   useEffect(() => {
     if (!breathState.running || breathState.phase === 'idle' || breathState.phase === 'done') return;
+    const durations = breathMode === '4-7-8' ? DURATIONS_478 : DURATIONS_BOX;
 
     const timer = window.setInterval(() => {
       setBreathState((prev) => {
@@ -58,10 +119,13 @@ export const StudyTools: React.FC = () => {
           return { ...prev, secondsLeft: prev.secondsLeft - 1 };
         }
         if (prev.phase === 'inhale') {
-          return { ...prev, phase: 'hold', secondsLeft: PHASE_DURATIONS.hold };
+          return { ...prev, phase: 'hold', secondsLeft: durations.hold };
         }
         if (prev.phase === 'hold') {
-          return { ...prev, phase: 'exhale', secondsLeft: PHASE_DURATIONS.exhale };
+          return { ...prev, phase: 'exhale', secondsLeft: durations.exhale };
+        }
+        if (prev.phase === 'exhale' && durations.hold2 > 0) {
+          return { ...prev, phase: 'hold2', secondsLeft: durations.hold2 };
         }
         if (prev.cycle >= totalCycles) {
           return { ...prev, running: false, phase: 'done', secondsLeft: 0 };
@@ -70,21 +134,22 @@ export const StudyTools: React.FC = () => {
           ...prev,
           cycle: prev.cycle + 1,
           phase: 'inhale',
-          secondsLeft: PHASE_DURATIONS.inhale,
+          secondsLeft: durations.inhale,
         };
       });
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [breathState.running, breathState.phase]);
+  }, [breathState.running, breathState.phase, breathMode]);
 
   const startOrToggleBreath = () => {
+    const durations = breathMode === '4-7-8' ? DURATIONS_478 : DURATIONS_BOX;
     setBreathState((prev) => {
       if (prev.phase === 'idle' || prev.phase === 'done') {
         return {
           running: true,
           phase: 'inhale',
-          secondsLeft: PHASE_DURATIONS.inhale,
+          secondsLeft: durations.inhale,
           cycle: 1,
         };
       }
@@ -92,11 +157,12 @@ export const StudyTools: React.FC = () => {
     });
   };
 
-  const resetBreath = () => {
+  const resetBreath = (nextMode?: BreathMode) => {
+    if (nextMode) setBreathMode(nextMode);
     setBreathState({
       running: false,
       phase: 'idle',
-      secondsLeft: PHASE_DURATIONS.inhale,
+      secondsLeft: 4,
       cycle: 1,
     });
   };
@@ -121,21 +187,26 @@ export const StudyTools: React.FC = () => {
 
   const phaseLabel =
     breathPhase === 'inhale'
-      ? 'Inhala por la nariz'
+      ? 'Inhala lento por nariz'
       : breathPhase === 'hold'
         ? 'Mantén el aire'
         : breathPhase === 'exhale'
-          ? 'Exhala lento por la boca'
-          : breathPhase === 'done'
-            ? 'Sesión completada'
-            : 'Listo para iniciar';
+          ? 'Exhala suave por boca'
+          : breathPhase === 'hold2'
+            ? 'Pausa pulmones vacíos'
+            : breathPhase === 'done'
+              ? 'Sistema regulado ✓'
+              : 'Listo para iniciar';
+
+  const selectedRiasecCodes = RIASEC_MINI_QUESTIONS.filter((q) => riasecChecks[q.id]).map((q) => q.type);
 
   return (
     <div className="tools-viewport">
       <div className="tools-header-block">
-        <h1 className="tools-h1">Herramientas de Preparación EXANI-II</h1>
+        <div className="section-eyebrow">Estrategia Basada en Evidencia · EXANI-II UAA</div>
+        <h1 className="tools-h1">Laboratorio de Alto Rendimiento</h1>
         <p className="tools-sub">
-          Recursos reales de cálculo, regulación cognitiva y lectura crítica para respaldar tu preparación rumbo a la UAA 2026.
+          Calcula tu puntaje real en escala CENEVAL, practica con reactivos reales, regula tu respuesta al estrés y valida tu perfil vocacional UAA.
         </p>
       </div>
 
@@ -150,7 +221,7 @@ export const StudyTools: React.FC = () => {
               Calculadora de Puntaje CENEVAL y Semáforo UAA
             </h2>
             <p className="tool-card-desc">
-              Ajusta tus aciertos por módulo (0–10) para estimar tu puntaje en escala real (700–1300) frente a la carrera objetivo.
+              Ajusta tus aciertos por módulo (0–10) para proyectar tu puntaje en escala oficial (700–1300) frente a tu carrera objetivo.
             </p>
           </div>
         </div>
@@ -251,9 +322,14 @@ export const StudyTools: React.FC = () => {
         </div>
       </section>
 
-      {/* Tool 2 & 3 Two-Column Row */}
+      {/* Tool 2: Interactive EXANI-II Simulator (4 free or 50 unlocked) */}
+      <section className="tool-card" aria-label="Simulador interactivo EXANI-II">
+        <ExaniSimulator isUnlocked={hasReactivosPack} onUnlockRequest={onOpenPacks} />
+      </section>
+
+      {/* Tool 3 & 4 Two-Column Row */}
       <div className="tools-split">
-        {/* Tool 2: 4-7-8 Breathing Trainer */}
+        {/* Breathing Trainer */}
         <section className="tool-card" aria-labelledby="breath-heading">
           <div className="tool-card-head">
             <div className="tool-icon-badge is-emerald">
@@ -261,28 +337,48 @@ export const StudyTools: React.FC = () => {
             </div>
             <div>
               <h2 id="breath-heading" className="tool-card-title">
-                Entrenador Anti-Ansiedad 4-7-8
+                Regulación Autonómica Pre-Examen
               </h2>
               <p className="tool-card-desc">
-                Úsalo 90 segundos antes de un simulacro para reducir activación por estrés y recuperar foco.
+                Alterna entre protocolo 4-7-8 (calma profunda) o Respiración Táctica 4-4-4-4 (foco inmediato en examen).
               </p>
             </div>
           </div>
 
+          <div className="breath-mode-switch">
+            <button
+              type="button"
+              className={`sim-filter-pill ${breathMode === '4-7-8' ? 'is-active' : ''}`}
+              onClick={() => resetBreath('4-7-8')}
+            >
+              Protocolo 4-7-8
+            </button>
+            <button
+              type="button"
+              className={`sim-filter-pill ${breathMode === 'box' ? 'is-active' : ''}`}
+              onClick={() => resetBreath('box')}
+            >
+              Respiración Táctica 4-4-4-4
+            </button>
+          </div>
+
           <div className="breath-stage">
             <div className={`breath-ring phase-${breathPhase}`}>
-              <div className="breath-seconds">{breathPhase === 'idle' ? '4-7-8' : breathPhase === 'done' ? '✓' : `${secondsLeft}s`}</div>
+              <div className="breath-seconds">
+                {breathPhase === 'idle' ? (breathMode === '4-7-8' ? '4-7-8' : '4×4') : breathPhase === 'done' ? '✓' : `${secondsLeft}s`}
+              </div>
               <div className="breath-phase-label">{phaseLabel}</div>
             </div>
             <div className="breath-cycle-text">
-              Ciclo {cycle} de {totalCycles} · Protocolo 4s inhala / 7s sostén / 8s exhala
+              Ciclo {cycle} de {totalCycles} ·{' '}
+              {breathMode === '4-7-8' ? '4s inhala / 7s sostén / 8s exhala' : '4s inhala / 4s sostén / 4s exhala / 4s pausa'}
             </div>
             <div className="breath-actions">
-              <button type="button" className="btn btn-primary" onClick={startOrToggleBreath}>
+              <button type="button" className="btn btn-gold" onClick={startOrToggleBreath}>
                 {breathRunning ? <Pause size={15} /> : <Play size={15} />}
                 {breathRunning ? 'Pausar' : breathPhase === 'idle' || breathPhase === 'done' ? 'Iniciar 4 ciclos' : 'Reanudar'}
               </button>
-              <button type="button" className="btn btn-secondary" onClick={resetBreath}>
+              <button type="button" className="btn btn-secondary" onClick={() => resetBreath()}>
                 <RotateCcw size={15} />
                 Reiniciar
               </button>
@@ -290,7 +386,7 @@ export const StudyTools: React.FC = () => {
           </div>
         </section>
 
-        {/* Tool 3: Desarme Filosófico Interactive Practice */}
+        {/* Desarme Filosófico Practice */}
         <section className="tool-card" aria-labelledby="desarme-heading">
           <div className="tool-card-head">
             <div className="tool-icon-badge">
@@ -301,21 +397,25 @@ export const StudyTools: React.FC = () => {
                 Práctica: Desarme Filosófico
               </h2>
               <p className="tool-card-desc">
-                Aplica los 4 pasos socráticos en un reactivo real antes de elegir opción.
+                Aplica los pasos socráticos en un argumento real antes de elegir opción.
               </p>
             </div>
           </div>
 
           <blockquote className="md-quote" style={{ marginTop: 0 }}>
-            "Quien confunde rapidez lectora con comprensión suele memorizar ejemplos aislados, pero falla cuando el examen cambia el contexto del argumento."
+            &ldquo;Quien confunde rapidez lectora con comprensión suele memorizar ejemplos aislados, pero falla cuando el examen cambia el contexto del argumento.&rdquo;
           </blockquote>
 
           <div className="desarme-steps">
-            <div><strong>1. Tesis:</strong> Leer rápido no equivale a comprender la estructura lógica.</div>
-            <div><strong>2. Conector clave:</strong> "pero" marca el contraste entre memorización y transferencia.</div>
+            <div>
+              <strong>1. Tesis:</strong> Leer rápido no equivale a comprender la estructura lógica.
+            </div>
+            <div>
+              <strong>2. Conector clave:</strong> &ldquo;pero&rdquo; marca el contraste entre memorización y transferencia.
+            </div>
           </div>
 
-          <div style={{ fontSize: '13.5px', fontWeight: 600, margin: '12px 0 8px', color: 'var(--navy-900)' }}>
+          <div style={{ fontSize: '13.5px', fontWeight: 600, margin: '12px 0 8px', color: 'var(--text-primary)' }}>
             ¿Qué consecuencia práctica se desprende del fragmento?
           </div>
 
@@ -328,7 +428,9 @@ export const StudyTools: React.FC = () => {
               <button
                 key={opt.id}
                 type="button"
-                className={`practice-opt-btn ${selectedPracticeOpt === opt.id ? (opt.id === 'B' ? 'is-correct' : 'is-wrong') : ''}`}
+                className={`practice-opt-btn ${
+                  selectedPracticeOpt === opt.id ? (opt.id === 'B' ? 'is-correct' : 'is-wrong') : ''
+                }`}
                 onClick={() => setSelectedPracticeOpt(opt.id)}
               >
                 {opt.text}
@@ -344,6 +446,94 @@ export const StudyTools: React.FC = () => {
                   ? 'Correcto: el desarme filosófico entrena la estructura del argumento, no la memoria mecánica.'
                   : 'Revisa el conector "pero": el texto critica memorizar ejemplos aislados y señala la importancia de comprender el argumento.'}
               </span>
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* Tool 5: RIASEC Vocational Affinity & Evidence Strategies (from conetica-educativa) */}
+      <div className="tools-split">
+        <section className="tool-card" aria-labelledby="riasec-heading">
+          <div className="tool-card-head">
+            <div className="tool-icon-badge">
+              <Compass size={18} />
+            </div>
+            <div>
+              <h2 id="riasec-heading" className="tool-card-title">
+                Orientador Vocacional Rápido (Modelo RIASEC)
+              </h2>
+              <p className="tool-card-desc">
+                Marca las afirmaciones con las que te identificas para validar tu afinidad con carreras de la UAA.
+              </p>
+            </div>
+          </div>
+
+          <div className="riasec-list">
+            {RIASEC_MINI_QUESTIONS.map((q) => {
+              const checked = Boolean(riasecChecks[q.id]);
+              return (
+                <button
+                  key={q.id}
+                  type="button"
+                  className={`riasec-item ${checked ? 'is-checked' : ''}`}
+                  onClick={() => setRiasecChecks((prev) => ({ ...prev, [q.id]: !prev[q.id] }))}
+                >
+                  <span className="riasec-code">{q.type}</span>
+                  <span>{q.text}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {selectedRiasecCodes.length > 0 && (
+            <div className="riasec-result">
+              <div className="riasec-result-title">
+                <Sparkles size={14} />
+                Carreras UAA sugeridas por tu perfil ({selectedRiasecCodes.join(' · ')}):
+              </div>
+              <div className="riasec-matches">
+                {selectedRiasecCodes.map((code) => (
+                  <div key={code} className="riasec-match-row">
+                    <strong>{RIASEC_META[code].name}:</strong> {RIASEC_META[code].careers}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="tool-card" aria-labelledby="wellness-heading">
+          <div className="tool-card-head">
+            <div className="tool-icon-badge is-violet">
+              <Brain size={18} />
+            </div>
+            <div>
+              <h2 id="wellness-heading" className="tool-card-title">
+                Protocolos Cognitivos Conética Educativa™
+              </h2>
+              <p className="tool-card-desc">
+                Principios prácticos de rendimiento aplicados en nuestros packs descargables.
+              </p>
+            </div>
+          </div>
+
+          <div className="desarme-steps" style={{ marginTop: 0 }}>
+            <div>
+              <strong>Descarga Cognitiva (5 min):</strong> Vacía pendientes en papel antes de estudiar para liberar memoria de trabajo.
+            </div>
+            <div>
+              <strong>Ciclos Ultradianos 90/20:</strong> 90 min de estudio activo sin teléfono + 20 min de recuperación real sin pantallas.
+            </div>
+            <div>
+              <strong>Simulación de Condiciones:</strong> Resuelve bloques cronometrados a la misma hora matutina en que presentarás el EXANI-II.
+            </div>
+          </div>
+
+          {onOpenPacks && (
+            <div style={{ marginTop: '14px' }}>
+              <button type="button" className="btn btn-gold" onClick={onOpenPacks} style={{ width: '100%' }}>
+                Ver los 3 Packs Descargables (PDF + Audio WAV)
+              </button>
             </div>
           )}
         </section>

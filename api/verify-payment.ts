@@ -1,3 +1,4 @@
+import { isValidProductId, type ProductId } from './_catalog.js';
 import {
   createAccessToken,
   parseJsonBody,
@@ -37,16 +38,36 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const body = parseJsonBody<{
     provider?: string;
+    productId?: string;
     sessionId?: string;
     orderId?: string;
     accessCode?: string;
     token?: string;
+    tokens?: string[];
   }>(req);
+
+  // Batch verify stored tokens on mount
+  if (Array.isArray(body.tokens)) {
+    const unlockedSet = new Set<ProductId>();
+    for (const rawTok of body.tokens.slice(0, 10)) {
+      if (typeof rawTok !== 'string') continue;
+      const check = verifyAccessToken(rawTok);
+      if (check.valid && isValidProductId(check.productId)) {
+        unlockedSet.add(check.productId);
+      }
+    }
+    const unlockedProductIds = Array.from(unlockedSet);
+    return res.status(200).json({ verified: unlockedProductIds.length > 0, unlockedProductIds });
+  }
 
   if (body.token) {
     const check = verifyAccessToken(body.token);
     if (check.valid) {
-      return res.status(200).json({ verified: true, token: body.token });
+      return res.status(200).json({
+        verified: true,
+        token: body.token,
+        productId: isValidProductId(check.productId) ? check.productId : 'reactivos-pack',
+      });
     }
     return res.status(401).json({ verified: false, error: 'Token de descarga inválido o expirado.' });
   }
@@ -68,7 +89,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           headers: { Authorization: `Bearer ${stripeKey}` },
         }
       );
-      const data = (await response.json()) as { payment_status?: string; status?: string };
+      const data = (await response.json()) as {
+        payment_status?: string;
+        metadata?: { product_id?: string };
+      };
       if (!response.ok || data.payment_status !== 'paid') {
         return res.status(402).json({
           verified: false,
@@ -76,11 +100,17 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         });
       }
 
-      const token = createAccessToken(`stripe:${sessionId}`);
+      const paidProductId: ProductId = isValidProductId(data.metadata?.product_id)
+        ? data.metadata.product_id
+        : isValidProductId(body.productId)
+          ? body.productId
+          : 'reactivos-pack';
+
+      const token = createAccessToken(`stripe:${sessionId}`, paidProductId);
       if (!token) {
         return res.status(503).json({ verified: false, error: 'Falta DOWNLOAD_TOKEN_SECRET en el servidor.' });
       }
-      return res.status(200).json({ verified: true, token });
+      return res.status(200).json({ verified: true, token, productId: paidProductId });
     } catch {
       return res.status(502).json({ verified: false, error: 'Error al verificar con Stripe.' });
     }
@@ -103,9 +133,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       const checkRes = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders/${encodeURIComponent(orderId)}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      const checkData = (await checkRes.json()) as { status?: string };
+      const checkData = (await checkRes.json()) as {
+        status?: string;
+        purchase_units?: Array<{ custom_id?: string }>;
+      };
 
       let finalStatus = checkData.status;
+      let orderProductId = checkData.purchase_units?.[0]?.custom_id;
+
       if (checkRes.ok && finalStatus !== 'COMPLETED') {
         const capRes = await fetch(
           `${getPayPalBaseUrl()}/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`,
@@ -118,8 +153,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
             },
           }
         );
-        const capData = (await capRes.json()) as { status?: string };
+        const capData = (await capRes.json()) as {
+          status?: string;
+          purchase_units?: Array<{ custom_id?: string }>;
+        };
         finalStatus = capData.status;
+        orderProductId = orderProductId || capData.purchase_units?.[0]?.custom_id;
       }
 
       if (finalStatus !== 'COMPLETED') {
@@ -129,11 +168,17 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         });
       }
 
-      const token = createAccessToken(`paypal:${orderId}`);
+      const paidProductId: ProductId = isValidProductId(orderProductId)
+        ? orderProductId
+        : isValidProductId(body.productId)
+          ? body.productId
+          : 'reactivos-pack';
+
+      const token = createAccessToken(`paypal:${orderId}`, paidProductId);
       if (!token) {
         return res.status(503).json({ verified: false, error: 'Falta DOWNLOAD_TOKEN_SECRET en el servidor.' });
       }
-      return res.status(200).json({ verified: true, token });
+      return res.status(200).json({ verified: true, token, productId: paidProductId });
     } catch {
       return res.status(502).json({ verified: false, error: 'Error al verificar el pago con PayPal.' });
     }
@@ -142,6 +187,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (body.provider === 'code') {
     const rawCodes = (process.env.KIT_ACCESS_CODES || '').trim();
     const candidate = (body.accessCode || '').trim();
+    const requestedProduct: ProductId = isValidProductId(body.productId) ? body.productId : 'reactivos-pack';
+
     if (!rawCodes) {
       return res.status(503).json({
         verified: false,
@@ -162,11 +209,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return res.status(403).json({ verified: false, error: 'Código de acceso incorrecto.' });
     }
 
-    const token = createAccessToken('access-code');
+    const token = createAccessToken('access-code', requestedProduct);
     if (!token) {
       return res.status(503).json({ verified: false, error: 'Falta DOWNLOAD_TOKEN_SECRET en el servidor.' });
     }
-    return res.status(200).json({ verified: true, token });
+    return res.status(200).json({ verified: true, token, productId: requestedProduct });
   }
 
   return res.status(400).json({ verified: false, error: 'Método de verificación no soportado.' });
