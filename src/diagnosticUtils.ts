@@ -170,8 +170,11 @@ export const deriveDiagnosticProgress = (messages: Message[]): DiagnosticProgres
   }
 
   const answeredSet = new Set<number>();
+  let seenQuizBlock = false;
   for (const msg of valid) {
-    if (msg.role === 'user') {
+    if (msg.role === 'model' && detectActiveQuestionBlock(msg.text).length > 0) {
+      seenQuizBlock = true;
+    } else if (msg.role === 'user' && seenQuizBlock) {
       const answerMatches = msg.text.matchAll(/\b([1-9]|[12]\d|30)\s*[-:. )]?\s*([ABC])\b/gi);
       for (const m of answerMatches) {
         const qNum = Number(m[1]);

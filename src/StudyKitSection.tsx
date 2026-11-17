@@ -14,7 +14,7 @@ const UNLOCK_TOKEN_KEY = 'miguelbot_kit_unlock_token';
 
 interface PaymentConfig {
   stripeEnabled: boolean;
-  mercadoPagoEnabled: boolean;
+  paypalEnabled: boolean;
   accessCodeEnabled: boolean;
   priceMxn: number;
   productName: string;
@@ -27,16 +27,9 @@ interface StudyKitSectionProps {
 export const StudyKitSection: React.FC<StudyKitSectionProps> = ({ latestReportText }) => {
   const [config, setConfig] = useState<PaymentConfig | null>(null);
   const [backendAvailable, setBackendAvailable] = useState<boolean>(true);
-  const [unlockToken, setUnlockToken] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem(UNLOCK_TOKEN_KEY);
-    } catch {
-      return null;
-    }
-  });
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
   const [isChecking, setIsChecking] = useState<boolean>(true);
-  const [checkoutLoading, setCheckoutLoading] = useState<'stripe' | 'mercadopago' | 'code' | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState<'stripe' | 'paypal' | 'code' | null>(null);
   const [buyerEmail, setBuyerEmail] = useState('');
   const [accessCode, setAccessCode] = useState('');
   const [statusMessage, setStatusMessage] = useState<{ type: 'ok' | 'err' | 'info'; text: string } | null>(null);
@@ -72,12 +65,12 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({ latestReportTe
         if (!cancelled) setBackendAvailable(false);
       }
 
-      // 2. Check URL redirect parameters after Stripe / Mercado Pago checkout
+      // 2. Check URL redirect parameters after Stripe / PayPal checkout
       const params = new URLSearchParams(window.location.search);
       const paymentStatus = params.get('payment');
       const provider = params.get('provider');
       const sessionId = params.get('session_id');
-      const paymentId = params.get('payment_id') || params.get('collection_id');
+      const paypalOrderId = params.get('token');
 
       if (paymentStatus === 'cancelled') {
         if (!cancelled) {
@@ -95,18 +88,21 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({ latestReportTe
           });
         }
         window.history.replaceState({}, '', window.location.pathname);
-      } else if (paymentStatus === 'success' && (provider === 'stripe' || provider === 'mercadopago')) {
+      } else if (paymentStatus === 'success' && (provider === 'stripe' || provider === 'paypal')) {
         try {
           const verifyRes = await fetch('/api/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ provider, sessionId, paymentId }),
+            body: JSON.stringify({
+              provider,
+              sessionId,
+              orderId: paypalOrderId,
+            }),
           });
           const verifyData = (await verifyRes.json()) as { verified?: boolean; token?: string; error?: string };
           if (verifyRes.ok && verifyData.verified && verifyData.token) {
             localStorage.setItem(UNLOCK_TOKEN_KEY, verifyData.token);
             if (!cancelled) {
-              setUnlockToken(verifyData.token);
               setIsUnlocked(true);
               setStatusMessage({
                 type: 'ok',
@@ -134,13 +130,20 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({ latestReportTe
         return;
       }
 
-      // 3. Re-verify existing unlock token on server
-      if (unlockToken) {
+      // 3. Re-verify stored unlock token on server
+      let storedToken: string | null = null;
+      try {
+        storedToken = localStorage.getItem(UNLOCK_TOKEN_KEY);
+      } catch {
+        storedToken = null;
+      }
+
+      if (storedToken) {
         try {
           const verifyRes = await fetch('/api/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: unlockToken }),
+            body: JSON.stringify({ token: storedToken }),
           });
           const contentType = verifyRes.headers.get('content-type') || '';
           if (verifyRes.ok && contentType.includes('application/json')) {
@@ -150,10 +153,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({ latestReportTe
             }
           } else if (verifyRes.status === 401) {
             localStorage.removeItem(UNLOCK_TOKEN_KEY);
-            if (!cancelled) {
-              setUnlockToken(null);
-              setIsUnlocked(false);
-            }
+            if (!cancelled) setIsUnlocked(false);
           }
         } catch {
           // Keep current state if offline
@@ -167,9 +167,9 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({ latestReportTe
     return () => {
       cancelled = true;
     };
-  }, [unlockToken]);
+  }, []);
 
-  const handleCheckout = async (provider: 'stripe' | 'mercadopago') => {
+  const handleCheckout = async (provider: 'stripe' | 'paypal') => {
     setCheckoutLoading(provider);
     setStatusMessage(null);
     try {
@@ -219,7 +219,6 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({ latestReportTe
         return;
       }
       localStorage.setItem(UNLOCK_TOKEN_KEY, data.token);
-      setUnlockToken(data.token);
       setIsUnlocked(true);
       setAccessCode('');
       setStatusMessage({
@@ -238,7 +237,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({ latestReportTe
   };
 
   const anyPaymentMethodEnabled = Boolean(
-    config && (config.stripeEnabled || config.mercadoPagoEnabled || config.accessCodeEnabled)
+    config && (config.stripeEnabled || config.paypalEnabled || config.accessCodeEnabled)
   );
 
   return (
@@ -349,15 +348,15 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({ latestReportTe
                   </p>
                 ) : !backendAvailable ? (
                   <div className="kit-notice-box">
-                    <strong>Servidor de pagos inactivo en esta vista previa local:</strong> al desplegar en Vercel (o correr <code>vercel dev</code>) con tus llaves de Stripe o Mercado Pago, el botón de pago abrirá el checkout oficial y descargará el PDF automáticamente al regresar.
+                    <strong>Servidor de pagos inactivo en esta vista previa local:</strong> al desplegar en Vercel (o correr <code>vercel dev</code>) con tus llaves de Stripe o PayPal, el botón de pago abrirá el checkout oficial y descargará el PDF automáticamente al regresar.
                   </div>
                 ) : !anyPaymentMethodEnabled ? (
                   <div className="kit-notice-box">
-                    <strong>Pasarela lista para activar:</strong> agrega <code>STRIPE_SECRET_KEY</code> o <code>MERCADOPAGO_ACCESS_TOKEN</code> (y <code>DOWNLOAD_TOKEN_SECRET</code>) en Vercel para habilitar el cobro directo con tarjeta y la descarga automática.
+                    <strong>Pasarela lista para activar:</strong> agrega <code>STRIPE_SECRET_KEY</code> o <code>PAYPAL_CLIENT_ID</code> + <code>PAYPAL_CLIENT_SECRET</code> (y <code>DOWNLOAD_TOKEN_SECRET</code>) en Vercel para habilitar el cobro directo y la descarga automática.
                   </div>
                 ) : (
                   <div className="kit-pay-buttons">
-                    {(config?.stripeEnabled || config?.mercadoPagoEnabled) && (
+                    {(config?.stripeEnabled || config?.paypalEnabled) && (
                       <div style={{ marginBottom: '4px' }}>
                         <label htmlFor="buyer-receipt-email" className="field-label">
                           Correo para tu recibo de pago (opcional)
@@ -382,20 +381,20 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({ latestReportTe
                         onClick={() => handleCheckout('stripe')}
                       >
                         <CreditCard size={16} />
-                        {checkoutLoading === 'stripe' ? 'Abriendo Stripe...' : 'Comprar con Tarjeta (Stripe)'}
+                        {checkoutLoading === 'stripe' ? 'Abriendo Stripe...' : 'Pagar con Tarjeta / Apple Pay (Stripe)'}
                       </button>
                     )}
 
-                    {config?.mercadoPagoEnabled && (
+                    {config?.paypalEnabled && (
                       <button
                         type="button"
                         className="btn btn-emerald"
                         style={{ width: '100%' }}
                         disabled={checkoutLoading !== null}
-                        onClick={() => handleCheckout('mercadopago')}
+                        onClick={() => handleCheckout('paypal')}
                       >
                         <CreditCard size={16} />
-                        {checkoutLoading === 'mercadopago' ? 'Abriendo Mercado Pago...' : 'Comprar con Mercado Pago'}
+                        {checkoutLoading === 'paypal' ? 'Abriendo PayPal...' : 'Pagar con PayPal'}
                       </button>
                     )}
 
@@ -438,7 +437,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({ latestReportTe
             <div className="privacy-note" style={{ marginTop: '14px' }}>
               <ShieldCheck size={16} style={{ flexShrink: 0, marginTop: '1px' }} />
               <span>
-                <strong>Pago verificado y descarga directa:</strong> al completar tu pago en Stripe o Mercado Pago regresas automáticamente aquí y tu PDF se descarga al instante.
+                <strong>Pago verificado y descarga directa:</strong> al completar tu pago en Stripe o PayPal regresas automáticamente aquí y tu PDF se descarga al instante.
               </span>
             </div>
           </div>

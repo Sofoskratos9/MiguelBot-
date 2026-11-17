@@ -7,6 +7,29 @@ import {
   type ApiResponse,
 } from './_security.js';
 
+const getPayPalBaseUrl = (): string => {
+  return (process.env.PAYPAL_SANDBOX || '').trim().toLowerCase() === 'true'
+    ? 'https://api-m.sandbox.paypal.com'
+    : 'https://api-m.paypal.com';
+};
+
+const getPayPalAccessToken = async (clientId: string, clientSecret: string): Promise<string> => {
+  const auth = Buffer.from(`${clientId}:${clientSecret}`, 'utf8').toString('base64');
+  const res = await fetch(`${getPayPalBaseUrl()}/v1/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: 'grant_type=client_credentials',
+  });
+  const data = (await res.json()) as { access_token?: string };
+  if (!res.ok || !data.access_token) {
+    throw new Error('PayPal auth failed');
+  }
+  return data.access_token;
+};
+
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -15,7 +38,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const body = parseJsonBody<{
     provider?: string;
     sessionId?: string;
-    paymentId?: string;
+    orderId?: string;
     accessCode?: string;
     token?: string;
   }>(req);
@@ -63,38 +86,55 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     }
   }
 
-  if (body.provider === 'mercadopago') {
-    const mpToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim();
-    const paymentId = (body.paymentId || '').trim();
-    if (!mpToken) {
-      return res.status(503).json({ verified: false, error: 'Mercado Pago no está configurado.' });
+  if (body.provider === 'paypal') {
+    const clientId = (process.env.PAYPAL_CLIENT_ID || '').trim();
+    const clientSecret = (process.env.PAYPAL_CLIENT_SECRET || '').trim();
+    const orderId = (body.orderId || '').trim();
+
+    if (!clientId || !clientSecret) {
+      return res.status(503).json({ verified: false, error: 'PayPal no está configurado.' });
     }
-    if (!paymentId || !/^\d+$/.test(paymentId)) {
-      return res.status(400).json({ verified: false, error: 'ID de pago de Mercado Pago inválido.' });
+    if (!orderId || !/^[A-Z0-9]{10,36}$/i.test(orderId)) {
+      return res.status(400).json({ verified: false, error: 'ID de orden de PayPal inválido.' });
     }
 
     try {
-      const response = await fetch(
-        `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`,
-        {
-          headers: { Authorization: `Bearer ${mpToken}` },
-        }
-      );
-      const data = (await response.json()) as { status?: string };
-      if (!response.ok || data.status !== 'approved') {
+      const accessToken = await getPayPalAccessToken(clientId, clientSecret);
+      const checkRes = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders/${encodeURIComponent(orderId)}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const checkData = (await checkRes.json()) as { status?: string };
+
+      let finalStatus = checkData.status;
+      if (checkRes.ok && finalStatus !== 'COMPLETED') {
+        const capRes = await fetch(
+          `${getPayPalBaseUrl()}/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        const capData = (await capRes.json()) as { status?: string };
+        finalStatus = capData.status;
+      }
+
+      if (finalStatus !== 'COMPLETED') {
         return res.status(402).json({
           verified: false,
-          error: 'El pago aún no ha sido aprobado por Mercado Pago.',
+          error: 'El pago aún no aparece completado en PayPal.',
         });
       }
 
-      const token = createAccessToken(`mp:${paymentId}`);
+      const token = createAccessToken(`paypal:${orderId}`);
       if (!token) {
         return res.status(503).json({ verified: false, error: 'Falta DOWNLOAD_TOKEN_SECRET en el servidor.' });
       }
       return res.status(200).json({ verified: true, token });
     } catch {
-      return res.status(502).json({ verified: false, error: 'Error al verificar con Mercado Pago.' });
+      return res.status(502).json({ verified: false, error: 'Error al verificar el pago con PayPal.' });
     }
   }
 

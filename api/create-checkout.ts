@@ -9,6 +9,29 @@ import {
 
 const isValidEmail = (email: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+const getPayPalBaseUrl = (): string => {
+  return (process.env.PAYPAL_SANDBOX || '').trim().toLowerCase() === 'true'
+    ? 'https://api-m.sandbox.paypal.com'
+    : 'https://api-m.paypal.com';
+};
+
+const getPayPalAccessToken = async (clientId: string, clientSecret: string): Promise<string> => {
+  const auth = Buffer.from(`${clientId}:${clientSecret}`, 'utf8').toString('base64');
+  const res = await fetch(`${getPayPalBaseUrl()}/v1/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: 'grant_type=client_credentials',
+  });
+  const data = (await res.json()) as { access_token?: string; error_description?: string };
+  if (!res.ok || !data.access_token) {
+    throw new Error(data.error_description || 'No se pudo autenticar con PayPal.');
+  }
+  return data.access_token;
+};
+
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -18,7 +41,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const provider = body.provider;
   const email = typeof body.email === 'string' ? body.email.trim() : '';
 
-  if (provider !== 'stripe' && provider !== 'mercadopago') {
+  if (provider !== 'stripe' && provider !== 'paypal') {
     return res.status(400).json({ error: 'Proveedor de pago inválido.' });
   }
 
@@ -82,54 +105,64 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     }
   }
 
-  // Mercado Pago Checkout Pro
-  const mpToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim();
-  if (!mpToken) {
-    return res.status(503).json({ error: 'Mercado Pago no está configurado en el servidor.' });
+  // PayPal Orders v2 Checkout
+  const clientId = (process.env.PAYPAL_CLIENT_ID || '').trim();
+  const clientSecret = (process.env.PAYPAL_CLIENT_SECRET || '').trim();
+  if (!clientId || !clientSecret) {
+    return res.status(503).json({ error: 'PayPal no está configurado en el servidor.' });
   }
 
   try {
-    const payload: Record<string, unknown> = {
-      items: [
-        {
-          title: productName,
-          description: 'Cuadernillo completo EXANI-II UAA 2026 con descarga inmediata.',
-          quantity: 1,
-          currency_id: 'MXN',
-          unit_price: priceMxn,
-        },
-      ],
-      external_reference: `kit-exani-${Date.now()}`,
-      back_urls: {
-        success: `${origin}/?payment=success&provider=mercadopago`,
-        failure: `${origin}/?payment=cancelled`,
-        pending: `${origin}/?payment=pending`,
-      },
-      auto_return: 'approved',
-    };
-
-    if (email) {
-      payload.payer = { email };
-    }
-
-    const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
+    const accessToken = await getPayPalAccessToken(clientId, clientSecret);
+    const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${mpToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        intent: 'CAPTURE',
+        purchase_units: [
+          {
+            description: productName.slice(0, 127),
+            amount: {
+              currency_code: 'MXN',
+              value: priceMxn.toFixed(2),
+            },
+          },
+        ],
+        payment_source: {
+          paypal: {
+            experience_context: {
+              brand_name: 'Preparación EXANI-II UAA',
+              locale: 'es-MX',
+              shipping_preference: 'NO_SHIPPING',
+              user_action: 'PAY_NOW',
+              return_url: `${origin}/?payment=success&provider=paypal`,
+              cancel_url: `${origin}/?payment=cancelled`,
+            },
+            ...(email ? { email_address: email } : {}),
+          },
+        },
+      }),
     });
 
-    const data = (await response.json()) as { init_point?: string; message?: string };
-    if (!response.ok || !data.init_point) {
+    const data = (await response.json()) as {
+      links?: Array<{ rel?: string; href?: string }>;
+      message?: string;
+    };
+    const approveUrl = data.links?.find((l) => l.rel === 'payer-action' || l.rel === 'approve')?.href;
+
+    if (!response.ok || !approveUrl) {
       return res.status(502).json({
-        error: data.message || 'No se pudo iniciar el checkout con Mercado Pago.',
+        error: data.message || 'No se pudo iniciar el checkout con PayPal.',
       });
     }
 
-    return res.status(200).json({ url: data.init_point });
-  } catch {
-    return res.status(502).json({ error: 'Error de comunicación con Mercado Pago.' });
+    return res.status(200).json({ url: approveUrl });
+  } catch (err) {
+    return res.status(502).json({
+      error: err instanceof Error ? err.message : 'Error de comunicación con PayPal.',
+    });
   }
 }

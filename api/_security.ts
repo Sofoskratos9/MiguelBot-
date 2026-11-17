@@ -70,7 +70,7 @@ const getSigningSecret = (): string | null => {
 
   const fallback = (
     process.env.STRIPE_SECRET_KEY ||
-    process.env.MERCADOPAGO_ACCESS_TOKEN ||
+    process.env.PAYPAL_CLIENT_SECRET ||
     process.env.KIT_ACCESS_CODES ||
     ''
   ).trim();

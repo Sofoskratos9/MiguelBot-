@@ -32,62 +32,76 @@ export const StudyTools: React.FC = () => {
   const [redaccion, setRedaccion] = useState<number>(7);
 
   // 2. 4-7-8 Breathing Trainer state
-  const [breathRunning, setBreathRunning] = useState(false);
-  const [breathPhase, setBreathPhase] = useState<BreathPhase>('idle');
-  const [secondsLeft, setSecondsLeft] = useState<number>(4);
-  const [cycle, setCycle] = useState<number>(1);
   const totalCycles = 4;
+  const [breathState, setBreathState] = useState<{
+    running: boolean;
+    phase: BreathPhase;
+    secondsLeft: number;
+    cycle: number;
+  }>({
+    running: false,
+    phase: 'idle',
+    secondsLeft: PHASE_DURATIONS.inhale,
+    cycle: 1,
+  });
 
   // 3. Desarme Filosófico mini-practice state
   const [selectedPracticeOpt, setSelectedPracticeOpt] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!breathRunning || breathPhase === 'idle' || breathPhase === 'done') return;
+    if (!breathState.running || breathState.phase === 'idle' || breathState.phase === 'done') return;
 
     const timer = window.setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev > 1) return prev - 1;
-
-        if (breathPhase === 'inhale') {
-          setBreathPhase('hold');
-          return PHASE_DURATIONS.hold;
+      setBreathState((prev) => {
+        if (!prev.running || prev.phase === 'idle' || prev.phase === 'done') return prev;
+        if (prev.secondsLeft > 1) {
+          return { ...prev, secondsLeft: prev.secondsLeft - 1 };
         }
-        if (breathPhase === 'hold') {
-          setBreathPhase('exhale');
-          return PHASE_DURATIONS.exhale;
+        if (prev.phase === 'inhale') {
+          return { ...prev, phase: 'hold', secondsLeft: PHASE_DURATIONS.hold };
         }
-        // Finished exhale
-        if (cycle >= totalCycles) {
-          setBreathRunning(false);
-          setBreathPhase('done');
-          return 0;
+        if (prev.phase === 'hold') {
+          return { ...prev, phase: 'exhale', secondsLeft: PHASE_DURATIONS.exhale };
         }
-        setCycle((c) => c + 1);
-        setBreathPhase('inhale');
-        return PHASE_DURATIONS.inhale;
+        if (prev.cycle >= totalCycles) {
+          return { ...prev, running: false, phase: 'done', secondsLeft: 0 };
+        }
+        return {
+          ...prev,
+          cycle: prev.cycle + 1,
+          phase: 'inhale',
+          secondsLeft: PHASE_DURATIONS.inhale,
+        };
       });
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [breathRunning, breathPhase, cycle]);
+  }, [breathState.running, breathState.phase]);
 
   const startOrToggleBreath = () => {
-    if (breathPhase === 'idle' || breathPhase === 'done') {
-      setCycle(1);
-      setBreathPhase('inhale');
-      setSecondsLeft(PHASE_DURATIONS.inhale);
-      setBreathRunning(true);
-      return;
-    }
-    setBreathRunning((r) => !r);
+    setBreathState((prev) => {
+      if (prev.phase === 'idle' || prev.phase === 'done') {
+        return {
+          running: true,
+          phase: 'inhale',
+          secondsLeft: PHASE_DURATIONS.inhale,
+          cycle: 1,
+        };
+      }
+      return { ...prev, running: !prev.running };
+    });
   };
 
   const resetBreath = () => {
-    setBreathRunning(false);
-    setBreathPhase('idle');
-    setCycle(1);
-    setSecondsLeft(PHASE_DURATIONS.inhale);
+    setBreathState({
+      running: false,
+      phase: 'idle',
+      secondsLeft: PHASE_DURATIONS.inhale,
+      cycle: 1,
+    });
   };
+
+  const { running: breathRunning, phase: breathPhase, secondsLeft, cycle } = breathState;
 
   const totalHits = lectura + analitico + redaccion;
   const accuracyPct = Math.round((totalHits / 30) * 100);
