@@ -11,6 +11,10 @@ export interface ApiResponse {
   status: (code: number) => ApiResponse;
   json: (body: unknown) => void;
   setHeader?: (name: string, value: string) => void;
+  writeHead?: (statusCode: number, headers?: Record<string, string>) => void;
+  write?: (chunk: string | Uint8Array) => boolean;
+  end?: (chunk?: string | Uint8Array) => void;
+  flushHeaders?: () => void;
 }
 
 export const getHeader = (req: ApiRequest, name: string): string => {

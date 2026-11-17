@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-import { GoogleGenAI } from '@google/genai';
-import type { Chat } from '@google/genai';
 import confetti from 'canvas-confetti';
 import {
   BookOpen,
@@ -28,6 +26,7 @@ import './index.css';
 import { MarkdownRenderer } from './src/MarkdownRenderer';
 import { StudyTools } from './src/StudyTools';
 import { StudyKitSection } from './src/StudyKitSection';
+import { EXANI_SYSTEM_INSTRUCTION } from './api/_systemPrompt';
 import {
   STORAGE_KEY,
   SESSION_API_KEY_STORAGE,
@@ -38,60 +37,53 @@ import {
   getContextualChips,
   isDiagnosticReport,
   loadStoredMessages,
+  type DeepSeekChatMessage,
   type Message,
 } from './src/diagnosticUtils';
 
 type WorkspaceTab = 'diagnostic' | 'tools' | 'kit';
 
-// --- System Instruction for Academic EXANI-II Evaluator ---
-const SYSTEM_INSTRUCTION = `
-Actúa como el Orientador Académico del método de Miguel Neftalí (filósofo y docente de bachillerato incorporado a la UAA), especializado en preparación para el EXANI-II 2026 de ingreso a licenciaturas en la Universidad Autónoma de Aguascalientes.
-
-Tu misión: Guiar al aspirante a través de un MINI-DIAGNÓSTICO GRATUITO de 30 reactivos clave del EXANI-II (los más predictivos: 10 de comprensión lectora, 10 de pensamiento analítico-matemático, 10 de redacción indirecta). Hazlo interactivo, paso a paso, para que sea claro y sin estrés.
-
-FLUJOS EXACTOS (sigue este orden estricto, sin saltar ni agregar extras):
-
-1. **SALUDO E INTRO**: Saluda cálidamente y explica: "¡Hola! Bienvenido al diagnóstico gratuito EXANI-II UAA 2026 del método de Miguel Neftalí. Tomará 10-15 min. Al final obtendrás tu puntaje estimado, semáforo de riesgo, consejos pedagógicos personalizados y cómo subir 100-200 puntos. ¿Listo? Empecemos con tus datos básicos (confidenciales y solo para personalizar)."
-
-2. **RECOLECCIÓN DE DATOS PERSONALES** (pregunta una por una, confirma antes de avanzar):
-   - Pregunta 1: "¿Cuál es el nombre completo del aspirante?"
-   - Pregunta 2: "¿En qué preparatoria estudia actualmente?"
-   - Pregunta 3: "¿Cuál es la carrera que más quiere en la UAA (ej: Medicina, Psicología)?"
-   - Pregunta 4: "¿Qué material ya tiene para prepararse? (ej: curso AS Capacitación, Wizi, Unitips, solo guía CENEVAL gratis, o nada)."
-   - Una vez completos: "¡Genial, [nombre]! Ahora pasamos al cuestionario de 30 reactivos. Te los muestro en bloques de 5 para que no te agobies. Selecciona tus respuestas (A, B o C) en los botones o escríbelas y presiona Enter. Al final, proceso todo."
-
-3. **PRESENTACIÓN DEL CUESTIONARIO** (genera 30 reactivos ORIGINALES y realistas de EXANI-II 2026, nivel UAA medio-alto):
-   - Balance: 10 comprensión lectora (textos 300-400 palabras sobre filosofía/ética tecnológica/ciencia/sociales, con preguntas de inferencia/análisis).
-   - 10 pensamiento analítico-matemático (problemas lógicos, secuencias, probabilidades básicas, sin cálculo avanzado).
-   - 10 redacción indirecta (identificar errores gramaticales, estructura argumentativa, cohesión).
-   - Muéstralos numerados, con 3 opciones (A, B, C). Pide respuestas en bloques: "Responde 1-5: [reactivos]. Escribe: 1-A, 2-B, etc."
-   - Valida: Si respuesta inválida, pide corrección. Recopila todas en memoria.
-
-4. **AL FINAL DEL CUESTIONARIO** (cuando tenga las 30 respuestas + datos):
-   - Procesa: Calcula aciertos/fallos por módulo (% exacto), puntaje global estimado (escala CENEVAL: 700-1300, basado en tablas reales 2025).
-   - Genera output estructurado y claro (en español, tono cálido/profesional, estilo Miguel Neftalí):
-     - **Título**: "¡Tu Mini-Diagnóstico EXANI-II UAA 2026, [nombre]!"
-     - **1. Calificación Global**: "[X/30 aciertos = Y%]. Puntaje estimado real: [ej: 950-1,050 puntos]."
-     - **2. Semáforo Rápido**: Verde/Amarillo/Rojo por módulo (explica: Verde=seguro para carreras medias; Rojo=riesgo en Medicina). Puedes validar metas en la pestaña "Herramientas" (Calculadora CENEVAL).
-     - **3. 3 Debilidades Principales**: Con ejemplo de reactivo fallado + explicación breve.
-     - **4. Consejos Pedagógicos Personalizados** (3-5 tips accionables, basados en filosofía/neuroaprendizaje, adaptados a su material y carrera):
-       - Ej: "Para comprensión lectora: Aplica el método de 'Desarme Filosófico' disponible en la pestaña Herramientas: identifica tesis, supuestos y conectores antes de mirar las opciones."
-       - Incluye neuroaprendizaje: "Técnica anti-ansiedad: usa el entrenador de Respiración 4-7-8 de la pestaña Herramientas durante 90 segundos antes de tus simulacros."
-       - Pensamiento crítico: "Parafrasea los enunciados con tus propias palabras y verifica cada argumento con evidencia antes de descartar opciones."
-     - **5. Recomendación Urgente**: "Con tu perfil, [nombre] puede subir 150+ puntos en 4 semanas con método estructurado."
-     - **6. SIGUIENTE PASO**: "Obtén el Kit Estratégico EXANI-II UAA 2026 directamente en la pestaña 'Kit PDF' (compra directa y descarga inmediata en PDF con reactivos explicados y plan de 4 semanas, sin enviar mensajes ni esperar confirmaciones). ¡Asegura [carrera] en UAA 2026!"
-
-Mantén todo confidencial, motivador y sin ventas agresivas hasta el cierre final. Si el usuario abandona, ofrece reanudar. Nunca solicites que el aspirante contacte un chat externo ni envíe archivos por mensajería; todo se resuelve y descarga directamente dentro de esta plataforma. Responde en español claro y cercano de Aguascalientes, sin mencionar que eres un bot o IA.`;
-
-const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-
-const getConfiguredApiKey = (): string => {
-  const envKey = (process.env.API_KEY || '').trim();
-  if (envKey) return envKey;
+const getSessionApiKey = (): string => {
   try {
     return (sessionStorage.getItem(SESSION_API_KEY_STORAGE) || '').trim();
   } catch {
     return '';
+  }
+};
+
+const consumeSseStream = async (
+  stream: ReadableStream<Uint8Array>,
+  onDelta: (delta: string) => void,
+  signal?: { cancelled: boolean }
+) => {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done || signal?.cancelled) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n');
+    buffer = lines.pop() ?? '';
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line || !line.startsWith('data:')) continue;
+      const payload = line.slice(5).trim();
+      if (payload === '[DONE]') return;
+
+      try {
+        const parsed = JSON.parse(payload) as {
+          choices?: Array<{ delta?: { content?: string }; message?: { content?: string } }>;
+        };
+        const delta = parsed.choices?.[0]?.delta?.content ?? parsed.choices?.[0]?.message?.content ?? '';
+        if (delta) onDelta(delta);
+      } catch {
+        // Ignore partial or non-JSON keepalive lines
+      }
+    }
   }
 };
 
@@ -274,8 +266,8 @@ const HelpModal: React.FC<{
 // --- Main App ---
 
 const App = () => {
-  const envApiKey = (process.env.API_KEY || '').trim();
-  const [apiKey, setApiKey] = useState<string>(() => getConfiguredApiKey());
+  const [sessionApiKey, setSessionApiKey] = useState<string>(() => getSessionApiKey());
+  const [serverStatus, setServerStatus] = useState<'checking' | 'ready' | 'unconfigured' | 'no-backend'>('checking');
   const [manualKeyInput, setManualKeyInput] = useState('');
   const [activeTab, setActiveTab] = useState<WorkspaceTab>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -294,40 +286,109 @@ const App = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const chatRef = useRef<Chat | null>(null);
   const confettiFiredRef = useRef<boolean>(false);
+  const activeStreamSignalRef = useRef<{ cancelled: boolean } | null>(null);
 
   const progress = useMemo(() => deriveDiagnosticProgress(messages), [messages]);
   const contextualChips = useMemo(() => getContextualChips(messages, progress), [messages, progress]);
+  const hasEvaluatorAccess = serverStatus === 'ready' || Boolean(sessionApiKey);
 
-  const initChatClient = useCallback((activeKey: string, existingMessages: Message[]) => {
-    const ai = new GoogleGenAI({ apiKey: activeKey });
-    const history = buildChatHistory(existingMessages);
-    chatRef.current = ai.chats.create({
-      model: MODEL_NAME,
-      config: { systemInstruction: SYSTEM_INSTRUCTION },
-      history,
-    });
+  // Check whether server-side DEEPSEEK_API_KEY is configured
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkConfig = async () => {
+      try {
+        const res = await fetch('/api/chat');
+        const contentType = res.headers.get('content-type') || '';
+        if (!res.ok || !contentType.includes('application/json')) {
+          if (!cancelled) setServerStatus('no-backend');
+          return;
+        }
+        const data = (await res.json()) as { configured?: boolean };
+        if (!cancelled) {
+          setServerStatus(data.configured ? 'ready' : 'unconfigured');
+          if (data.configured) setErrorMsg(null);
+        }
+      } catch {
+        if (!cancelled) setServerStatus('no-backend');
+      }
+    };
+
+    checkConfig();
+    const stored = loadStoredMessages();
+    if (stored.length > 0 && deriveDiagnosticProgress(stored).stage === 'completed') {
+      confettiFiredRef.current = true;
+    }
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const streamModelResponse = useCallback(
-    async (promptText: string, retryPayload: string, signal?: { cancelled: boolean }) => {
-      if (!chatRef.current) return;
+    async (conversationHistory: Message[], retryPayload: string) => {
+      if (activeStreamSignalRef.current) {
+        activeStreamSignalRef.current.cancelled = true;
+      }
+      const signal = { cancelled: false };
+      activeStreamSignalRef.current = signal;
 
       setIsLoading(true);
       setIsStreaming(false);
 
+      const apiMessages: DeepSeekChatMessage[] = buildChatHistory(conversationHistory);
+
       try {
-        const stream = await chatRef.current.sendMessageStream({ message: promptText });
+        let response: Response;
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (serverStatus !== 'ready' && sessionApiKey) {
+          headers['x-deepseek-key'] = sessionApiKey;
+        }
+
+        if (serverStatus === 'no-backend' && sessionApiKey) {
+          response = await fetch('https://api.deepseek.com/chat/completions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${sessionApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'deepseek-chat',
+              messages: [{ role: 'system', content: EXANI_SYSTEM_INSTRUCTION }, ...apiMessages],
+              stream: true,
+              temperature: 0.7,
+            }),
+          });
+        } else {
+          response = await fetch('/api/chat', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ messages: apiMessages }),
+          });
+        }
+
+        if (!response.ok) {
+          let serverError = `HTTP ${response.status}`;
+          try {
+            const errBody = (await response.json()) as { error?: string | { message?: string } };
+            if (typeof errBody.error === 'string') {
+              serverError = errBody.error;
+            } else if (errBody.error?.message) {
+              serverError = `${response.status}: ${errBody.error.message}`;
+            }
+          } catch {
+            // Keep HTTP status fallback
+          }
+          throw new Error(serverError);
+        }
+
         let accumulated = '';
         let createdBubble = false;
 
-        for await (const chunk of stream) {
-          if (signal?.cancelled) return;
-          const part = chunk.text || '';
-          if (!part) continue;
+        const appendDelta = (part: string) => {
+          if (signal.cancelled || !part) return;
           accumulated += part;
-
           if (!createdBubble) {
             createdBubble = true;
             setIsStreaming(true);
@@ -342,9 +403,39 @@ const App = () => {
               return updated;
             });
           }
+        };
+
+        const contentType = response.headers.get('content-type') || '';
+        if (response.body && contentType.includes('text/event-stream')) {
+          await consumeSseStream(response.body, appendDelta, signal);
+        } else if (contentType.includes('application/json')) {
+          const json = (await response.json()) as {
+            rawSse?: string;
+            choices?: Array<{ message?: { content?: string } }>;
+          };
+          const direct = json.choices?.[0]?.message?.content;
+          if (direct) {
+            appendDelta(direct);
+          } else if (json.rawSse) {
+            for (const line of json.rawSse.split('\n')) {
+              const trimmedLine = line.trim();
+              if (!trimmedLine.startsWith('data:')) continue;
+              const payload = trimmedLine.slice(5).trim();
+              if (payload === '[DONE]') break;
+              try {
+                const parsed = JSON.parse(payload) as {
+                  choices?: Array<{ delta?: { content?: string } }>;
+                };
+                const delta = parsed.choices?.[0]?.delta?.content || '';
+                if (delta) appendDelta(delta);
+              } catch {
+                // Ignore malformed SSE lines
+              }
+            }
+          }
         }
 
-        if (signal?.cancelled) return;
+        if (signal.cancelled) return;
 
         if (!accumulated.trim()) {
           setMessages((prev) => [
@@ -358,8 +449,8 @@ const App = () => {
           ]);
         }
       } catch (error) {
-        if (signal?.cancelled) return;
-        console.error('Streaming error:', error);
+        if (signal.cancelled) return;
+        console.error('DeepSeek streaming error:', error);
         setMessages((prev) => [
           ...prev.filter((m) => !(m.role === 'model' && m.text.trim() === '')),
           {
@@ -370,39 +461,14 @@ const App = () => {
           },
         ]);
       } finally {
-        if (!signal?.cancelled) {
+        if (!signal.cancelled) {
           setIsStreaming(false);
           setIsLoading(false);
         }
       }
     },
-    []
+    [serverStatus, sessionApiKey]
   );
-
-  // Initialize chat client on mount / API key change
-  useEffect(() => {
-    if (!apiKey) {
-      chatRef.current = null;
-      return;
-    }
-
-    const signal = { cancelled: false };
-    try {
-      const stored = loadStoredMessages();
-      initChatClient(apiKey, stored);
-      setErrorMsg(null);
-      if (stored.length > 0 && deriveDiagnosticProgress(stored).stage === 'completed') {
-        confettiFiredRef.current = true;
-      }
-    } catch (err) {
-      console.error('Initialization error:', err);
-      setErrorMsg('Error al inicializar el evaluador. Verifica tu clave API.');
-    }
-
-    return () => {
-      signal.cancelled = true;
-    };
-  }, [apiKey, initChatClient]);
 
   // Persist valid messages once generation finishes
   useEffect(() => {
@@ -450,33 +516,25 @@ const App = () => {
   }, [inputText]);
 
   const startDiagnostic = async () => {
-    if (!apiKey || isLoading) return;
-    if (!chatRef.current) {
-      initChatClient(apiKey, []);
-    }
+    if (!hasEvaluatorAccess || isLoading) return;
     setHasStarted(true);
-    await streamModelResponse('Hola', '__INIT__');
+    await streamModelResponse([{ role: 'user', text: 'Hola' }], '__INIT__');
   };
 
   const sendUserMessage = async (textToSend: string, options?: { skipAddingUserBubble?: boolean }) => {
     const trimmed = textToSend.trim();
-    if (!trimmed || isLoading) return;
-
-    if (!chatRef.current && apiKey) {
-      initChatClient(apiKey, messages);
-    }
-    if (!chatRef.current) return;
+    if (!trimmed || isLoading || !hasEvaluatorAccess) return;
 
     setHasStarted(true);
     setQuickAnswers({});
 
-    if (!options?.skipAddingUserBubble) {
-      setMessages((prev) => [...prev.filter((m) => !m.isError), { role: 'user', text: trimmed }]);
-    } else {
-      setMessages((prev) => prev.filter((m) => !m.isError));
-    }
+    const cleanedBase = messages.filter((m) => !m.isError);
+    const nextConversation: Message[] = options?.skipAddingUserBubble
+      ? cleanedBase
+      : [...cleanedBase, { role: 'user', text: trimmed }];
 
-    await streamModelResponse(trimmed, trimmed);
+    setMessages(nextConversation);
+    await streamModelResponse(nextConversation, trimmed);
   };
 
   const handleSend = async () => {
@@ -501,8 +559,7 @@ const App = () => {
     if (isLoading) return;
     if (retryText === '__INIT__') {
       setMessages([]);
-      if (apiKey) initChatClient(apiKey, []);
-      await streamModelResponse('Hola', '__INIT__');
+      await streamModelResponse([{ role: 'user', text: 'Hola' }], '__INIT__');
       return;
     }
     await sendUserMessage(retryText, { skipAddingUserBubble: true });
@@ -516,6 +573,9 @@ const App = () => {
   };
 
   const resetChat = async () => {
+    if (activeStreamSignalRef.current) {
+      activeStreamSignalRef.current.cancelled = true;
+    }
     localStorage.removeItem(STORAGE_KEY);
     confettiFiredRef.current = false;
     setShowHelp(false);
@@ -524,9 +584,6 @@ const App = () => {
     setInputText('');
     setQuickAnswers({});
     setHasStarted(false);
-    if (apiKey) {
-      initChatClient(apiKey, []);
-    }
   };
 
   const handleSaveManualKey = (e: React.FormEvent) => {
@@ -540,7 +597,7 @@ const App = () => {
     }
     setManualKeyInput('');
     setErrorMsg(null);
-    setApiKey(cleaned);
+    setSessionApiKey(cleaned);
   };
 
   const handleClearSessionKey = () => {
@@ -554,7 +611,7 @@ const App = () => {
     setDrawerOpen(false);
     setMessages([]);
     setHasStarted(false);
-    setApiKey('');
+    setSessionApiKey('');
   };
 
   const handleSidebarCopyReport = async () => {
@@ -811,7 +868,7 @@ const App = () => {
           <StudyTools />
         ) : activeTab === 'kit' ? (
           <StudyKitSection latestReportText={progress.latestReportText} />
-        ) : !apiKey || errorMsg ? (
+        ) : (!hasEvaluatorAccess && serverStatus !== 'checking') || errorMsg ? (
           <div className="messages-viewport">
             <div className="setup-card" style={{ margin: 'auto' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
@@ -829,7 +886,7 @@ const App = () => {
               </div>
 
               <p style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--text-secondary)', marginBottom: '14px' }}>
-                {errorMsg || 'Configura la variable GEMINI_API_KEY en .env.local (o en Vercel) para habilitar el cuestionario interactivo de 30 reactivos.'}
+                {errorMsg || 'Configura la variable DEEPSEEK_API_KEY en el servidor (.env.local o Vercel) para habilitar el cuestionario interactivo de 30 reactivos.'}
               </p>
 
               <div
@@ -843,19 +900,19 @@ const App = () => {
                   marginBottom: '16px',
                 }}
               >
-                <strong>En local o Vercel:</strong> define <code>GEMINI_API_KEY</code> en <code>.env.local</code> o Environment Variables.
+                <strong>En local o Vercel:</strong> define <code>DEEPSEEK_API_KEY</code> en <code>.env.local</code> o Environment Variables (nunca se expone en el navegador).
               </div>
 
               <form onSubmit={handleSaveManualKey} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <label htmlFor="manual-api-key" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  O ingresa una clave temporal solo para esta sesión:
+                  O ingresa una clave de DeepSeek temporal solo para esta sesión:
                 </label>
                 <input
                   id="manual-api-key"
                   type="password"
                   value={manualKeyInput}
                   onChange={(e) => setManualKeyInput(e.target.value)}
-                  placeholder="AIza..."
+                  placeholder="sk-..."
                   className="field-input"
                 />
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -1036,7 +1093,7 @@ const App = () => {
         <HelpModal
           onClose={() => setShowHelp(false)}
           onReset={resetChat}
-          hasManualSessionKey={!envApiKey && Boolean(apiKey)}
+          hasManualSessionKey={serverStatus !== 'ready' && Boolean(sessionApiKey)}
           onClearSessionKey={handleClearSessionKey}
         />
       )}

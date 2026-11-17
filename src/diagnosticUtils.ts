@@ -1,10 +1,13 @@
-import type { Content } from '@google/genai';
-
 export interface Message {
   role: 'user' | 'model';
   text: string;
   isError?: boolean;
   retryText?: string;
+}
+
+export interface DeepSeekChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
 }
 
 export type DiagnosticStage = 'intro' | 'onboarding' | 'quiz' | 'completed';
@@ -17,36 +20,46 @@ export interface DiagnosticProgress {
 }
 
 export const STORAGE_KEY = 'miguelbot_chat_session_v2';
-export const SESSION_API_KEY_STORAGE = 'miguelbot_session_api_key';
+export const SESSION_API_KEY_STORAGE = 'miguelbot_session_deepseek_key';
 
 export const formatApiError = (error: unknown): string => {
   const msg = error instanceof Error ? error.message : String(error ?? '');
   const lower = msg.toLowerCase();
 
   if (
+    lower.includes('402') ||
+    lower.includes('insufficient balance') ||
+    lower.includes('saldo suficiente')
+  ) {
+    return 'La cuenta de DeepSeek no tiene saldo suficiente. Verifica tu balance o clave API.';
+  }
+  if (
     lower.includes('api_key') ||
     lower.includes('api key') ||
+    lower.includes('authentication') ||
     lower.includes('401') ||
     lower.includes('403') ||
-    lower.includes('permission_denied')
+    lower.includes('unauthorized')
   ) {
-    return 'La clave API de Gemini no es válida o no tiene permisos. Verifica tu configuración e intenta de nuevo.';
+    return 'La clave API de DeepSeek no es válida o no tiene permisos. Verifica DEEPSEEK_API_KEY e intenta de nuevo.';
   }
   if (
     lower.includes('429') ||
     lower.includes('quota') ||
-    lower.includes('rate limit') ||
-    lower.includes('resource_exhausted')
+    lower.includes('rate limit')
   ) {
-    return 'Se alcanzó el límite temporal de solicitudes de la API. Espera unos segundos e intenta de nuevo.';
+    return 'Se alcanzó el límite temporal de solicitudes de DeepSeek. Espera unos segundos e intenta de nuevo.';
   }
-  if (lower.includes('404') || lower.includes('not found') || lower.includes('no longer available')) {
-    return 'El modelo configurado no está disponible actualmente. Verifica GEMINI_MODEL o intenta más tarde.';
+  if (lower.includes('404') || lower.includes('not found') || lower.includes('model')) {
+    return 'El modelo configurado en DEEPSEEK_MODEL no está disponible actualmente.';
   }
-  return 'Hubo un error de conexión con MiguelBot. Por favor intenta de nuevo.';
+  if (msg.trim() && msg.length < 180 && !lower.includes('failed to fetch')) {
+    return msg;
+  }
+  return 'Hubo un error de conexión con el evaluador académico. Por favor intenta de nuevo.';
 };
 
-export const buildChatHistory = (messages: Message[]): Content[] => {
+export const buildChatHistory = (messages: Message[]): DeepSeekChatMessage[] => {
   const validMessages = messages.filter(
     (m) =>
       !m.isError &&
@@ -57,22 +70,19 @@ export const buildChatHistory = (messages: Message[]): Content[] => {
 
   if (validMessages.length === 0) return [];
 
-  const history: Content[] = [];
+  const history: DeepSeekChatMessage[] = [];
   if (validMessages[0].role === 'model') {
-    history.push({ role: 'user', parts: [{ text: 'Hola' }] });
+    history.push({ role: 'user', content: 'Hola' });
   }
 
   for (const msg of validMessages) {
+    const apiRole: 'user' | 'assistant' = msg.role === 'user' ? 'user' : 'assistant';
     const last = history[history.length - 1];
-    if (last && last.role === msg.role) {
-      last.parts = [{ text: `${last.parts?.[0]?.text ?? ''}\n\n${msg.text}`.trim() }];
+    if (last && last.role === apiRole) {
+      last.content = `${last.content}\n\n${msg.text}`.trim();
     } else {
-      history.push({ role: msg.role, parts: [{ text: msg.text }] });
+      history.push({ role: apiRole, content: msg.text });
     }
-  }
-
-  if (history.length > 0 && history[history.length - 1].role === 'user') {
-    history.pop();
   }
 
   return history;

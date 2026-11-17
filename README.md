@@ -19,18 +19,18 @@ Plataforma interactiva de diagnóstico, herramientas de estudio y cuadernillo PD
    ```bash
    npm install
    ```
-2. Crea `.env.local` a partir de `.env.example` y agrega `GEMINI_API_KEY`.
+2. Crea `.env.local` a partir de `.env.example` y agrega `DEEPSEEK_API_KEY`.
 3. Inicia el entorno:
    ```bash
    npm run dev
    ```
    *(Para probar también los endpoints `/api/*` de pago en local, usa `vercel dev`.)*
 
-## Activar pagos reales y descarga directa en Vercel
+## Activar evaluador, pagos reales y descarga directa en Vercel
 
 En **Vercel → Project Settings → Environment Variables** configura:
 
-- `GEMINI_API_KEY`: clave para el evaluador diagnóstico.
+- `DEEPSEEK_API_KEY`: clave secreta del servidor para el evaluador diagnóstico (nunca se expone en el navegador).
 - `DOWNLOAD_TOKEN_SECRET`: cadena aleatoria segura (mínimo 32 caracteres) para firmar los tokens de descarga.
 - `KIT_PRICE_MXN`: precio en pesos mexicanos (por defecto `299`).
 - **Stripe**: `STRIPE_SECRET_KEY` (`sk_live_...` o `sk_test_...`).
