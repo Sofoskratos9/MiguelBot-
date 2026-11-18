@@ -1,4 +1,6 @@
 import { jsPDF } from 'jspdf';
+import { getUaaCycleContext } from '../shared/examCycle';
+import { EXAM_SOURCES_SNAPSHOT } from '../shared/examSources';
 import { EXANI_50_BANK, type ExaniArea, type ExaniQuestion } from './exaniBank';
 
 type Rgb = [number, number, number];
@@ -44,6 +46,7 @@ const cleanPdf = (raw: string): string =>
 
 class LuxuryEditorialPdf {
   public readonly doc: jsPDF;
+  public readonly cycle = getUaaCycleContext();
   public y = 26;
   public readonly margin = 17;
   public readonly pageWidth = 210;
@@ -114,7 +117,11 @@ class LuxuryEditorialPdf {
     this.doc.text('MIGUEL LOPEZ', this.margin + 16, 20.5);
     this.doc.setTextColor(...C_GOLD);
     this.doc.setFontSize(7.8);
-    this.doc.text('ESTRATEGA EDUCATIVO  |  METODO UAA 2026', this.margin + 16, 25.5);
+    this.doc.text(
+      cleanPdf(`ESTRATEGA EDUCATIVO  |  METODO UAA ${this.cycle.targetAdmissionYear} (${this.cycle.editionMonthYear.toUpperCase()})`),
+      this.margin + 16,
+      25.5
+    );
 
     // Pill Badge
     const cleanBadge = cleanPdf(opts.badge).toUpperCase();
@@ -821,7 +828,11 @@ class LuxuryEditorialPdf {
 
         this.doc.setFont('helvetica', 'normal');
         this.doc.setTextColor(...C_SLATE_500);
-        this.doc.text('Miguel Lopez - Estratega Educativo UAA 2026', this.pageWidth - this.margin - 62, 12.5);
+        this.doc.text(
+          cleanPdf(`Miguel Lopez - Estratega Educativo UAA ${this.cycle.targetAdmissionYear}`),
+          this.pageWidth - this.margin - 65,
+          12.5
+        );
 
         this.doc.setDrawColor(...C_GOLD);
         this.doc.setLineWidth(0.35);
@@ -846,11 +857,12 @@ class LuxuryEditorialPdf {
 // 1. MUESTRA GRATUITA AMPLIADA (5 Paginas Visuales con Ejemplos Completos)
 // =========================================================================
 export const buildSampleKitPdf = (): jsPDF => {
-  const pdf = new LuxuryEditorialPdf('MUESTRA GRATUITA EXANI-II UAA 2026');
+  const cycle = getUaaCycleContext();
+  const pdf = new LuxuryEditorialPdf(`MUESTRA GRATUITA EXANI-II ${cycle.shortCycleTag}`);
   pdf.addLuxuryCover({
-    badge: 'Muestra Gratuita Ampliada · Edicion 2026',
+    badge: `Muestra Gratuita Ampliada · ${cycle.editionLabel}`,
     title: 'Metodo de Alto Rendimiento EXANI-II UAA',
-    subtitle: 'Comprueba la profundidad visual, ejemplos guiados paso a paso, anatomia de distractores y plantillas listas para imprimir.',
+    subtitle: `Comprueba la profundidad visual, ejemplos guiados paso a paso, estructura oficial CENEVAL vigente (${EXAM_SOURCES_SNAPSHOT.lastSyncedLabel}) y plantillas listas para imprimir.`,
     edition: 'Mapa de esta Muestra Gratuita (5 Paginas)',
     accentColor: C_GOLD,
     tocItems: [
@@ -859,7 +871,7 @@ export const buildSampleKitPdf = (): jsPDF => {
       { code: '03', title: '3 Reactivos Resueltos (Lectura, Matematica y Analitico)', detail: 'Explicacion detallada de acierto y error comun en cada opcion' },
       { code: '04', title: 'Plantilla Imprimible Feynman + Plan de 7 Dias', detail: 'Herramienta inmediata para empezar tu preparacion hoy mismo' },
     ],
-    footerNote: 'Descarga libre para evaluar nuestra metodologia antes de adquirir cualquier pack mediante pago directo con Stripe.',
+    footerNote: `Sincronizado con estructura oficial CENEVAL (${EXAM_SOURCES_SNAPSHOT.cenevalOfficial.duration}) para compra directa con Stripe.`,
   });
 
   // PAGE 2
@@ -941,7 +953,7 @@ export const buildSampleKitPdf = (): jsPDF => {
   pdf.addChapterBanner('Herramienta Inmediata', 'Ficha Imprimible Feynman + Ruta de Arranque 7 Dias', C_EMERALD);
   pdf.addWorksheetBox(
     'Plantilla Feynman Express: Explica un tema que hoy te cueste trabajo',
-    'Concepto elegido: _________________________  |  Fecha: ___/___/2026  |  Meta: Dominio sin apuntes',
+    `Concepto elegido: _________________________  |  Fecha: ___/___/${cycle.currentYear}  |  Meta: Dominio sin apuntes`,
     52,
     4
   );
@@ -965,10 +977,11 @@ export const buildSampleKitPdf = (): jsPDF => {
 // 2. PACK 1: KIT DE NEURO-APRENDIZAJE ($99 MXN) -> 14 Paginas Detalladas
 // =========================================================================
 export const buildNeuroKitPdf = (): jsPDF => {
-  const pdf = new LuxuryEditorialPdf('PACK 01 - KIT DE NEURO-APRENDIZAJE 2026');
+  const cycle = getUaaCycleContext();
+  const pdf = new LuxuryEditorialPdf(`PACK 01 - KIT DE NEURO-APRENDIZAJE ${cycle.targetAdmissionYear}`);
   pdf.addLuxuryCover({
-    badge: 'Pack 01 · Manual 14 Pags + 4 Plantillas + Audio 40 Hz',
-    title: 'Kit de Neuro-Aprendizaje EXANI-II 2026',
+    badge: `Pack 01 · ${cycle.editionMonthYear} · 14 Pags + 4 Plantillas + Audio 40 Hz`,
+    title: `Kit de Neuro-Aprendizaje EXANI-II ${cycle.targetAdmissionYear}`,
     subtitle: 'Sistema completo de Ciclos Ultradianos 90/20, Curva del Olvido, Metodo Feynman con ejemplos resueltos, Desarme Filosófico, Rutas 30/15/7 dias y Protocolo 40 Hz.',
     edition: 'Mapa Completo del Manual (14 Paginas)',
     accentColor: [96, 165, 250],
@@ -1368,7 +1381,7 @@ export const buildNeuroKitPdf = (): jsPDF => {
 
   // PAGE 11: PRINTABLE 03 - WEEKLY ULTRADIAN PLANNER
   pdf.addPageBreak();
-  pdf.addChapterBanner('Plantilla Imprimible 03', 'Planificador Semanal Ultradiano (UAA 2026)', C_BLUE);
+  pdf.addChapterBanner('Plantilla Imprimible 03', `Planificador Semanal Ultradiano (${cycle.shortCycleTag})`, C_BLUE);
   pdf.addParagraph('Asigna tus bloques en tus horas pico de energia. Marca la casilla solo al completar los 90 min sin celular + 20 min de descanso real.');
   pdf.addTable(
     ['Dia', 'Bloque 1 (Prioridad Semaforo Rojo)', 'Bloque 2 (Practica / Repaso Espaciado)', 'Hecho'],
@@ -1463,15 +1476,16 @@ export const buildNeuroKitPdf = (): jsPDF => {
 };
 
 // =========================================================================
-// 3. PACK 2: BANCO DE 50 REACTIVOS EXANI-II ($149 MXN) -> ~28 Paginas
+// 3. PACK 2: BANCO DE 50 REACTIVOS EXANI-II ($149 MXN) -> 25 Paginas
 // =========================================================================
 export const buildReactivos50Pdf = (diagnosticReportText?: string | null): jsPDF => {
-  const pdf = new LuxuryEditorialPdf('PACK 02 - BANCO DE 50 REACTIVOS EXANI-II 2026');
+  const cycle = getUaaCycleContext();
+  const pdf = new LuxuryEditorialPdf(`PACK 02 - BANCO DE 50 REACTIVOS EXANI-II ${cycle.targetAdmissionYear}`);
   pdf.addLuxuryCover({
-    badge: 'Best Seller · Edicion Predictiva Ampliada 2026',
+    badge: `Best Seller · ${cycle.editionLabel}`,
     title: 'Banco de 50 Reactivos EXANI-II UAA',
-    subtitle: 'Manual estrategico con grafica de metas UAA, formulario completo de 4 areas, cuadernillo limpio sin respuestas, hoja optica de burbujas 1-50 y solucionario comentado.',
-    edition: 'Estructura Completa del Cuadernillo',
+    subtitle: `Manual estrategico alineado a CENEVAL (${EXAM_SOURCES_SNAPSHOT.lastSyncedLabel}): grafica de metas UAA, formulario de 4 areas, cuadernillo limpio, hoja de burbujas 1-50 y solucionario.`,
+    edition: 'Estructura Completa del Cuadernillo (25 Paginas)',
     accentColor: C_GOLD,
     tocItems: [
       { code: '01', title: 'Mapa CENEVAL, Grafica de Metas UAA y Formulario Maestro', detail: 'Puntajes por carrera, regla 45-75-15, traps comunes y acordeon de 4 areas' },
@@ -1479,7 +1493,7 @@ export const buildReactivos50Pdf = (diagnosticReportText?: string | null): jsPDF
       { code: '03', title: 'Parte II: Hoja Optica de Burbujas (A/B/C/D) y Clave Rapida', detail: 'Hoja imprimible 1-50 + autodiagnostico por area + formula CENEVAL' },
       { code: '04', title: 'Parte III: Solucionario Comentado Completo + Bitacora UAA', detail: 'Explicacion paso a paso de los 50 reactivos y plan segun tu semaforo' },
     ],
-    footerNote: 'Recomendacion: Imprime la Hoja Optica de Burbujas (Parte II) y resuelve la Parte I completa en 65 minutos antes de ver las respuestas.',
+    footerNote: `Referencia oficial: ${EXAM_SOURCES_SNAPSHOT.cenevalOfficial.duration} | ${EXAM_SOURCES_SNAPSHOT.uaaOfficial.admissionWeighting}`,
   });
 
   // PAGE 2: BLUEPRINT, HORIZONTAL SCORE CHART + OPTIONAL DIAGNOSTIC REPORT
@@ -1513,8 +1527,8 @@ export const buildReactivos50Pdf = (diagnosticReportText?: string | null): jsPDF
     pdf.addCalloutBox('Resumen Evaluado en Plataforma', lines.join('\n'), 'emerald');
   } else {
     pdf.addCalloutBox(
-      'Formula Rapida de Conversion CENEVAL (Sobre 50 Reactivos)',
-      'Puntaje Estimado = 700 + (Tus Aciertos x 12). Ejemplo: si logras 40 aciertos de 50 -> 700 + (40 x 12) = 1,180 puntos estimados. Tu meta de entrenamiento debe superar +4 aciertos por encima del corte historico de tu carrera.',
+      `Formula CENEVAL + Estructura Oficial (${EXAM_SOURCES_SNAPSHOT.lastSyncedLabel})`,
+      `Puntaje = 700 + (Aciertos x 12). Ej: 40/50 -> 1,180 pts.\nExamen real CENEVAL: 30 Lectura + 30 Redaccion + 30 Matematicas + 2 modulos especificos (24 c/u, o Premedicina 48). ${EXAM_SOURCES_SNAPSHOT.uaaOfficial.admissionWeighting}`,
       'gold'
     );
   }
@@ -1680,10 +1694,10 @@ export const buildReactivos50Pdf = (diagnosticReportText?: string | null): jsPDF
   pdf.addTable(
     ['Intento', 'Fecha', 'Lectura /13', 'Matem. /13', 'Analit. /12', 'Lengua /12', 'CENEVAL Est.'],
     [
-      ['Simulacro 1', '___/___/26', '', '', '', '', ''],
-      ['Simulacro 2', '___/___/26', '', '', '', '', ''],
-      ['Simulacro 3', '___/___/26', '', '', '', '', ''],
-      ['Simulacro 4', '___/___/26', '', '', '', '', ''],
+      ['Simulacro 1', `___/___/${cycle.currentYearShort}`, '', '', '', '', ''],
+      ['Simulacro 2', `___/___/${cycle.currentYearShort}`, '', '', '', '', ''],
+      ['Simulacro 3', `___/___/${cycle.currentYearShort}`, '', '', '', '', ''],
+      ['Simulacro 4', `___/___/${cycle.currentYearShort}`, '', '', '', '', ''],
     ],
     [28, 25, 24, 24, 24, 24, 27]
   );
@@ -1714,9 +1728,10 @@ export const buildReactivos50Pdf = (diagnosticReportText?: string | null): jsPDF
 // 4. PACK 3: PROTOCOLO ANTI-ANSIEDAD NSDR ($79 MXN) -> 10 Paginas Clinicas
 // =========================================================================
 export const buildNsdrProtocolPdf = (): jsPDF => {
-  const pdf = new LuxuryEditorialPdf('PACK 03 - PROTOCOLO ANTI-ANSIEDAD NSDR 2026');
+  const cycle = getUaaCycleContext();
+  const pdf = new LuxuryEditorialPdf(`PACK 03 - PROTOCOLO ANTI-ANSIEDAD NSDR ${cycle.targetAdmissionYear}`);
   pdf.addLuxuryCover({
-    badge: 'Pack 03 · Audio WAV Alpha->Theta + Manual Clinico 10 Pags',
+    badge: `Pack 03 · ${cycle.editionMonthYear} · Audio WAV Alpha->Theta + Manual 10 Pags`,
     title: 'Protocolo Anti-Ansiedad NSDR Pre-Examen',
     subtitle: 'Regulacion vagal rapida en 10 minutos, curva Yerkes-Dodson, 3 diagramas de respiracion tactica, 4 rescates reales en aula, nutricion 72h y tarjeta de bolsillo.',
     edition: 'Contenido Completo del Manual Clinico (10 Paginas)',
@@ -2002,7 +2017,7 @@ export const buildNsdrProtocolPdf = (): jsPDF => {
   pdf.addBullet('Noche previa: Mochila lista a las 20:00 hrs; telefono en silencio; Audio NSDR 10 minutos con luces bajas.', true);
   pdf.addBullet('Manana del examen: Desayuno proteina + grasa saludable; botella de agua; cero conversaciones ansiosas en la entrada.', true);
   pdf.addWorksheetBox(
-    'Datos Logisticos Exactos de Mi Examen UAA 2026',
+    `Datos Logisticos Exactos de Mi Examen ${cycle.shortCycleTag}`,
     'Campus / Edificio / Aula: ______________________ | Hora cita: _____ | Salir de casa a las: _____',
     34,
     2
@@ -2038,7 +2053,7 @@ export const buildNsdrProtocolPdf = (): jsPDF => {
   pdf.addChapterBanner('Plantilla Imprimible 03', 'Tarjeta de Bolsillo "Protocolo de Emergencia 60 Segundos"', C_GOLD);
   pdf.addParagraph('Recorta o fotografia esta tarjeta para repasarla justo antes de entrar al aula UAA (recuerda guardar tu telefono antes de ingresar):');
   pdf.addPocketCardCutout(
-    'TARJETA DE RESCATE UAA 2026 - MIGUEL LOPEZ',
+    `TARJETA DE RESCATE ${cycle.shortCycleTag} - MIGUEL LOPEZ`,
     'Protocolo Silencioso en Pupitre (60 Segundos)',
     [
       '1. DETENTE Y SUELTA EL LAPIZ (5 seg): Separa mandibula, baja los hombros y mira un punto fijo del escritorio.',
@@ -2060,19 +2075,23 @@ export const buildNsdrProtocolPdf = (): jsPDF => {
 
 // Export browser save helpers
 export const generateSampleKitPdf = () => {
-  buildSampleKitPdf().save('Muestra-Gratuita-EXANI-II-2026.pdf');
+  const { targetAdmissionYear } = getUaaCycleContext();
+  buildSampleKitPdf().save(`Muestra-Gratuita-EXANI-II-UAA-${targetAdmissionYear}.pdf`);
 };
 
 export const generateNeuroKitPdf = () => {
-  buildNeuroKitPdf().save('Kit-Neuro-Aprendizaje-2026-MiguelLopez.pdf');
+  const { targetAdmissionYear } = getUaaCycleContext();
+  buildNeuroKitPdf().save(`Kit-Neuro-Aprendizaje-UAA-${targetAdmissionYear}-MiguelLopez.pdf`);
 };
 
 export const generateReactivos50Pdf = (diagnosticReportText?: string | null) => {
-  buildReactivos50Pdf(diagnosticReportText).save('Banco-50-Reactivos-EXANI-II-2026.pdf');
+  const { targetAdmissionYear } = getUaaCycleContext();
+  buildReactivos50Pdf(diagnosticReportText).save(`Banco-50-Reactivos-EXANI-II-UAA-${targetAdmissionYear}.pdf`);
 };
 
 export const generateNsdrProtocolPdf = () => {
-  buildNsdrProtocolPdf().save('Protocolo-Anti-Ansiedad-NSDR-2026.pdf');
+  const { targetAdmissionYear } = getUaaCycleContext();
+  buildNsdrProtocolPdf().save(`Protocolo-Anti-Ansiedad-NSDR-UAA-${targetAdmissionYear}.pdf`);
 };
 
 export const generateFullKitPdf = generateReactivos50Pdf;

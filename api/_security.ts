@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { getUaaCycleContext } from '../shared/examCycle.js';
 
 export interface ApiRequest {
   method?: string;
@@ -61,7 +62,10 @@ export const getKitPriceMxn = (): number => {
 };
 
 export const getKitProductName = (): string => {
-  return (process.env.KIT_PRODUCT_NAME || 'Kit Estratégico EXANI-II UAA 2026 (PDF Completo)').trim();
+  const cycle = getUaaCycleContext();
+  return (
+    process.env.KIT_PRODUCT_NAME || `Kit Estratégico EXANI-II UAA ${cycle.targetAdmissionYear} (PDF Completo)`
+  ).trim();
 };
 
 const getSigningSecret = (): string | null => {

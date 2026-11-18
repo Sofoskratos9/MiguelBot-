@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { LiveBinauralPlayer, type AudioSessionKind } from './audioGenerator';
 import { ExaniSimulator } from './ExaniSimulator';
+import { getUaaCycleContext } from '../shared/examCycle';
+import { EXAM_SOURCES_SNAPSHOT } from '../shared/examSources';
 
 export type ProductId = 'neuro-kit' | 'reactivos-pack' | 'nsdr-protocol';
 
@@ -39,7 +41,19 @@ interface PaymentConfigResponse {
   stripeEnabled: boolean;
   accessCodeEnabled: boolean;
   products: ProductSpec[];
+  examCycle?: {
+    editionMonthYear: string;
+    targetAdmissionYear: number;
+    editionLabel: string;
+    uaaPhaseLabel: string;
+  };
+  examSources?: {
+    lastSyncedIso: string;
+    lastSyncedLabel: string;
+  };
 }
+
+const initialCycle = getUaaCycleContext();
 
 const DEFAULT_PRODUCTS: ProductSpec[] = [
   {
@@ -47,7 +61,7 @@ const DEFAULT_PRODUCTS: ProductSpec[] = [
     name: 'Kit de Neuro-Aprendizaje',
     badge: 'PDF + Audio WAV',
     tagline:
-      'Guía visual extensa con diagramas ultradianos (90/20), plantillas imprimibles Feynman/Repaso Espaciado y audio binaural 40 Hz.',
+      'Guía visual extensa con diagramas ultradianos (90/20), 4 plantillas imprimibles Feynman/Repaso Espaciado, casos resueltos y audio binaural 40 Hz.',
     priceMxn: 99,
     compareAtMxn: 299,
     ctaLabel: 'Pagar con Stripe y Descargar',
@@ -60,9 +74,8 @@ const DEFAULT_PRODUCTS: ProductSpec[] = [
   {
     id: 'reactivos-pack',
     name: 'Banco de 50 Reactivos EXANI-II',
-    badge: 'Best Seller · Edición 2026',
-    tagline:
-      '50 preguntas originales estilo CENEVAL 2026 en formato examen imprimible + hoja óptica de burbujas + formulario maestro + solucionario completo.',
+    badge: `Best Seller · Edición ${initialCycle.targetAdmissionYear}`,
+    tagline: `50 preguntas originales estilo CENEVAL ${initialCycle.targetAdmissionYear} en formato examen imprimible + hoja óptica de burbujas + formulario maestro + solucionario completo.`,
     priceMxn: 149,
     compareAtMxn: 499,
     ctaLabel: 'Comprar Pack con Stripe',
@@ -468,7 +481,9 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
   return (
     <div className="tools-viewport">
       <div className="packs-hero-header">
-        <div className="section-eyebrow">Pago Seguro con Stripe · Descarga Inmediata</div>
+        <div className="section-eyebrow">
+          Pago Seguro con Stripe · Descarga Inmediata · {initialCycle.editionLabel} (CENEVAL/UAA: {EXAM_SOURCES_SNAPSHOT.lastSyncedLabel})
+        </div>
         <h1 className="packs-h1">Herramientas de Alto Rendimiento</h1>
         <p className="packs-sub">
           Material editorial detallado, plantillas imprimibles, audio estéreo en .wav y simulador de 50 reactivos. Compra directa con Stripe y descarga inmediata en tu dispositivo.

@@ -1,10 +1,66 @@
+import { getUaaCycleContext } from '../shared/examCycle.js';
+import { EXAM_SOURCES_SNAPSHOT } from '../shared/examSources.js';
 import { getHeader, parseJsonBody, type ApiRequest, type ApiResponse } from './_security.js';
-import { EXANI_SYSTEM_INSTRUCTION } from './_systemPrompt.js';
+import { buildExaniSystemInstruction } from './_systemPrompt.js';
 
 interface IncomingMessage {
   role?: string;
   content?: string;
 }
+
+const liveSearchCache = new Map<string, { expiresAt: number; text: string }>();
+
+const fetchLiveOfficialContext = async (latestUserText: string): Promise<string> => {
+  const tavilyKey = (process.env.TAVILY_API_KEY || '').trim();
+  if (!tavilyKey || !latestUserText) return '';
+
+  const needsOfficialLookup =
+    /(convocatoria|fecha|examen|temario|gu[ií]a|ceneval|uaa|202\d|cambio|puntaje|m[oó]dulo|premedicina|requisito|registro)/i.test(
+      latestUserText
+    );
+  if (!needsOfficialLookup) return '';
+
+  const cacheKey = latestUserText.toLowerCase().replace(/\s+/g, ' ').slice(0, 120);
+  const cached = liveSearchCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.text;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2500);
+  try {
+    const cycle = getUaaCycleContext();
+    const res = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: tavilyKey,
+        query: `${latestUserText.slice(0, 160)} EXANI-II UAA ${cycle.targetAdmissionYear}`,
+        include_domains: ['ceneval.edu.mx', 'uaa.mx'],
+        search_depth: 'basic',
+        max_results: 3,
+      }),
+    });
+    if (!res.ok) return '';
+    const json = (await res.json()) as {
+      results?: Array<{ title?: string; url?: string; content?: string }>;
+    };
+    const items = Array.isArray(json.results) ? json.results.slice(0, 3) : [];
+    const formatted = items
+      .map((r) => `- ${r.title || 'Fuente oficial'} (${r.url || ''}): ${(r.content || '').slice(0, 260)}`)
+      .join('\n');
+    liveSearchCache.set(cacheKey, {
+      expiresAt: Date.now() + 6 * 60 * 60 * 1000,
+      text: formatted,
+    });
+    return formatted;
+  } catch {
+    return '';
+  } finally {
+    clearTimeout(timer);
+  }
+};
 
 const getServerDeepSeekKey = (): string => {
   return (process.env.DEEPSEEK_API_KEY || '').trim();
@@ -32,9 +88,13 @@ const mapUpstreamError = (status: number): string => {
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method === 'GET') {
+    const cycle = getUaaCycleContext();
     return res.status(200).json({
       configured: Boolean(getServerDeepSeekKey()),
       model: getDeepSeekModel(),
+      liveSearchEnabled: Boolean((process.env.TAVILY_API_KEY || '').trim()),
+      examCycle: cycle.editionLabel,
+      lastSyncedLabel: EXAM_SOURCES_SNAPSHOT.lastSyncedLabel,
     });
   }
 
@@ -73,6 +133,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return res.status(400).json({ error: 'Debes enviar al menos un mensaje válido.' });
   }
 
+  const lastUserMsg = [...sanitizedMessages].reverse().find((m) => m.role === 'user')?.content || '';
+  const liveOfficialContext = await fetchLiveOfficialContext(lastUserMsg);
+  const systemInstruction = buildExaniSystemInstruction(new Date(), liveOfficialContext);
+
   try {
     const upstream = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
@@ -82,7 +146,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       },
       body: JSON.stringify({
         model: getDeepSeekModel(),
-        messages: [{ role: 'system', content: EXANI_SYSTEM_INSTRUCTION }, ...sanitizedMessages],
+        messages: [{ role: 'system', content: systemInstruction }, ...sanitizedMessages],
         stream: true,
         temperature: 0.7,
       }),

@@ -1,6 +1,6 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
-import { EXANI_SYSTEM_INSTRUCTION } from './api/_systemPrompt'
+import { buildExaniSystemInstruction } from './api/_systemPrompt'
 
 const deepSeekDevMiddleware = (env: Record<string, string>): Plugin => ({
   name: 'deepseek-dev-api',
@@ -54,7 +54,7 @@ const deepSeekDevMiddleware = (env: Record<string, string>): Plugin => ({
           },
           body: JSON.stringify({
             model,
-            messages: [{ role: 'system', content: EXANI_SYSTEM_INSTRUCTION }, ...cleanMessages],
+            messages: [{ role: 'system', content: buildExaniSystemInstruction() }, ...cleanMessages],
             stream: true,
             temperature: 0.7,
           }),

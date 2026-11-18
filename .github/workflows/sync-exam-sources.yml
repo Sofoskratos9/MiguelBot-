@@ -1,0 +1,46 @@
+name: Sincronizar Fuentes EXANI-II y UAA
+
+on:
+  schedule:
+    # Dia 1 de cada mes a las 09:15 UTC (03:15 AM hora Aguascalientes)
+    - cron: '15 9 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-exam-sources:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Sincronizar CENEVAL EXANI-II y UAA
+        env:
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+        run: node scripts/sync-exam-sources.mjs
+
+      - name: Validar compilacion TypeScript y Vite
+        run: npm run build
+
+      - name: Publicar actualizacion si hay cambios
+        run: |
+          if git diff --quiet shared/examSources.ts; then
+            echo "Sin cambios en shared/examSources.ts"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add shared/examSources.ts
+          git commit -m "chore: sincronizar fuentes oficiales EXANI-II CENEVAL y UAA"
+          git push

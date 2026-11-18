@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { CheckCircle2, Filter, Lock, RotateCcw, Sparkles, Trophy, XCircle } from 'lucide-react';
+import { getUaaCycleContext } from '../shared/examCycle';
 import { EXANI_50_BANK, FREE_PREVIEW_QUESTIONS, type ExaniArea, type ExaniQuestion } from './exaniBank';
 
 interface ExaniSimulatorProps {
@@ -16,6 +17,7 @@ const AREAS: Array<'Todas' | ExaniArea> = [
 ];
 
 export const ExaniSimulator: React.FC<ExaniSimulatorProps> = ({ isUnlocked, onUnlockRequest }) => {
+  const cycle = getUaaCycleContext();
   const [selectedArea, setSelectedArea] = useState<'Todas' | ExaniArea>('Todas');
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -57,7 +59,7 @@ export const ExaniSimulator: React.FC<ExaniSimulatorProps> = ({ isUnlocked, onUn
           <div className="sim-eyebrow">
             {isUnlocked ? 'Simulador Completo Desbloqueado · 50 Reactivos' : 'Simulador Muestra Gratuita · 4 Reactivos'}
           </div>
-          <h3 className="sim-title">Entrenamiento Interactivo EXANI-II 2026</h3>
+          <h3 className="sim-title">Entrenamiento Interactivo EXANI-II {cycle.targetAdmissionYear}</h3>
         </div>
 
         <div className="sim-stats-row">

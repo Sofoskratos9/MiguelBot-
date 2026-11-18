@@ -28,7 +28,9 @@ import './index.css';
 import { MarkdownRenderer } from './src/MarkdownRenderer';
 import { StudyTools } from './src/StudyTools';
 import { StudyKitSection, TOKENS_STORAGE_KEY, type ProductId } from './src/StudyKitSection';
-import { EXANI_SYSTEM_INSTRUCTION } from './api/_systemPrompt';
+import { buildExaniSystemInstruction } from './api/_systemPrompt';
+import { getUaaCycleContext } from './shared/examCycle';
+import { EXAM_SOURCES_SNAPSHOT } from './shared/examSources';
 import {
   STORAGE_KEY,
   SESSION_API_KEY_STORAGE,
@@ -189,7 +191,7 @@ const HelpModal: React.FC<{
         </div>
 
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.55, marginTop: 0 }}>
-          Plataforma académica de diagnóstico y alto rendimiento EXANI-II UAA 2026 — Miguel López.
+          Plataforma académica de diagnóstico y alto rendimiento EXANI-II {getUaaCycleContext().shortCycleTag} — Miguel López.
         </p>
         <ul style={{ paddingLeft: '18px', fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
           <li style={{ marginBottom: '6px' }}>
@@ -202,7 +204,7 @@ const HelpModal: React.FC<{
             <strong>Packs con Descarga Inmediata:</strong> Paga de forma segura con Stripe y descarga al instante tus cuadernos PDF y audios WAV sin salir de la plataforma.
           </li>
           <li>
-            <strong>Privacidad local:</strong> Tus datos y tokens de descarga permanecen en tu navegador y puedes borrarlos en un clic.
+            <strong>Actualización continua ({EXAM_SOURCES_SNAPSHOT.lastSyncedLabel}):</strong> Estructura alineada con CENEVAL ({EXAM_SOURCES_SNAPSHOT.cenevalOfficial.duration}) y fechas del ciclo {getUaaCycleContext().shortCycleTag}.
           </li>
         </ul>
 
@@ -269,13 +271,14 @@ const LandingView: React.FC<{
   onOpenTools: () => void;
   onOpenPacks: () => void;
 }> = ({ onStartDiagnostic, onOpenTools, onOpenPacks }) => {
+  const cycle = getUaaCycleContext();
   return (
     <div className="landing-viewport">
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-pill">
           <Sparkles size={13} />
-          <span>Estrategia Académica &amp; Neuro-Aprendizaje · UAA 2026</span>
+          <span>Estrategia Académica &amp; Neuro-Aprendizaje · {cycle.editionLabel}</span>
         </div>
 
         <h1 className="hero-title">
@@ -283,7 +286,7 @@ const LandingView: React.FC<{
         </h1>
 
         <p className="hero-desc">
-          Evalúa tu nivel real en 10 minutos con nuestro diagnóstico adaptativo, entrena con 50 reactivos comentados y descarga herramientas diseñadas para maximizar tu puntaje CENEVAL.
+          Evalúa tu nivel real en 10 minutos con nuestro diagnóstico adaptativo ({cycle.uaaPhaseLabel}), entrena con 50 reactivos comentados y descarga herramientas actualizadas para maximizar tu puntaje CENEVAL.
         </p>
 
         <div className="hero-actions">
@@ -304,7 +307,7 @@ const LandingView: React.FC<{
         <div className="hero-metrics">
           <div className="metric-card">
             <strong>30 Reactivos</strong>
-            <span>Diagnóstico personalizado por área UAA</span>
+            <span>Diagnóstico personalizado por área {cycle.shortCycleTag}</span>
           </div>
           <div className="metric-card">
             <strong>50 Preguntas + WAV</strong>
@@ -356,7 +359,7 @@ const LandingView: React.FC<{
 
           <article className="pack-card is-featured" onClick={onOpenPacks} style={{ cursor: 'pointer' }}>
             <div className="pack-visual-band">
-              <span className="pack-badge">Best Seller · Edición 2026</span>
+              <span className="pack-badge">Best Seller · Edición {cycle.targetAdmissionYear}</span>
               <div className="pack-icon-wrap">
                 <FileText size={44} strokeWidth={1.6} />
               </div>
@@ -364,7 +367,7 @@ const LandingView: React.FC<{
             <div className="pack-body">
               <h3 className="pack-title">Banco de 50 Reactivos EXANI-II</h3>
               <p className="pack-tagline">
-                50 preguntas originales basadas en el temario oficial CENEVAL 2026 con simulacro interactivo y soluciones comentadas.
+                50 preguntas originales basadas en el temario oficial CENEVAL {cycle.targetAdmissionYear} con simulacro interactivo y soluciones comentadas.
               </p>
               <div className="pack-footer">
                 <div className="pack-price-line">
@@ -444,6 +447,8 @@ const App = () => {
 
   // Check DeepSeek config + verify any saved product tokens on mount
   useEffect(() => {
+    const cycle = getUaaCycleContext();
+    document.title = `Miguel López · Estratega Educativo · EXANI-II ${cycle.shortCycleTag}`;
     let cancelled = false;
 
     const checkConfig = async () => {
@@ -530,7 +535,7 @@ const App = () => {
             },
             body: JSON.stringify({
               model: 'deepseek-chat',
-              messages: [{ role: 'system', content: EXANI_SYSTEM_INSTRUCTION }, ...apiMessages],
+              messages: [{ role: 'system', content: buildExaniSystemInstruction() }, ...apiMessages],
               stream: true,
               temperature: 0.7,
             }),
@@ -1117,7 +1122,7 @@ const App = () => {
                 <div className="messages-viewport">
                   {!hasStarted && messages.length === 0 ? (
                     <section className="welcome-card" aria-label="Bienvenida al diagnóstico">
-                      <div className="welcome-eyebrow">Orientador Académico · EXANI-II UAA 2026</div>
+                      <div className="welcome-eyebrow">Orientador Académico · EXANI-II {getUaaCycleContext().shortCycleTag}</div>
                       <h1 className="welcome-h1">Descubre tu puntaje real EXANI-II en 10 minutos</h1>
                       <p className="welcome-desc">
                         Evaluación guiada con el método de Miguel López. Resuelve 30 reactivos clave paso a paso y combina tu reporte con nuestro simulador de 50 reactivos y packs descargables.
