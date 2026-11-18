@@ -121,7 +121,13 @@ export const isDiagnosticReport = (text: string): boolean => {
     'mini-diagnóstico exani-ii',
   ];
   const matches = signals.filter((s) => lower.includes(s)).length;
-  return matches >= 2;
+  if (matches < 2) return false;
+  // El reporte real siempre trae la calificación como "N/30 aciertos"
+  // (o "N de 30 aciertos"). El mensaje de bienvenida describe el reporte
+  // ("obtendrás tu puntaje estimado, semáforo de riesgo, consejos
+  // pedagógicos...") pero no trae ninguna calificación, así que sin este
+  // requisito se confundía con el reporte y el contador marcaba 30/30.
+  return /\b\d{1,2}\s*\/\s*30\b/.test(text) || /\b\d{1,2}\s+de\s+30\b/i.test(text);
 };
 
 export const detectActiveQuestionBlock = (text: string): number[] => {
@@ -187,7 +193,11 @@ export const deriveDiagnosticProgress = (messages: Message[]): DiagnosticProgres
 
   let latestReportText: string | null = null;
   for (let i = valid.length - 1; i >= 0; i--) {
-    if (valid[i].role === 'model' && isDiagnosticReport(valid[i].text)) {
+    // Un reporte solo puede existir después de haber presentado al menos
+    // un bloque del cuestionario. Sin este requisito, el mensaje de
+    // bienvenida (que describe el reporte final) se tomaba por el reporte
+    // mismo y el diagnóstico se marcaba completado con 30/30 al abrirlo.
+    if (valid[i].role === 'model' && seenQuizBlock && isDiagnosticReport(valid[i].text)) {
       latestReportText = valid[i].text;
       break;
     }
