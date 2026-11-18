@@ -212,7 +212,7 @@ export const StudyTools: React.FC<StudyToolsProps> = ({ hasReactivosPack = false
         <figure className="neftali-fig" style={{ maxWidth: '220px' }}>
           <img
             src="/ilustraciones/planta.png"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            onError={(e) => { const fig = e.currentTarget.closest('figure'); if (fig) { (fig as HTMLElement).style.display = 'none'; } else { e.currentTarget.style.display = 'none'; } }}
             alt="Regando una plantita: tu preparación crece con constancia"
             loading="lazy"
           />

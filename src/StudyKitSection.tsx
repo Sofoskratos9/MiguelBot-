@@ -510,7 +510,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
         <figure className="neftali-fig" style={{ maxWidth: '320px', margin: '0 auto 20px' }}>
           <img
             src="/ilustraciones/puerta.png"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            onError={(e) => { const fig = e.currentTarget.closest('figure'); if (fig) { (fig as HTMLElement).style.display = 'none'; } else { e.currentTarget.style.display = 'none'; } }}
             alt="Puerta entreabierta: elige por dónde seguir tu preparación"
             loading="lazy"
           />
@@ -795,7 +795,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
         <img
           className="neftali-motif-sm"
           src="/ilustraciones/balanza.png"
-          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          onError={(e) => { const fig = e.currentTarget.closest('figure'); if (fig) { (fig as HTMLElement).style.display = 'none'; } else { e.currentTarget.style.display = 'none'; } }}
           alt="Balanza: pesa lo que de verdad importa antes de decidir"
           loading="lazy"
         />

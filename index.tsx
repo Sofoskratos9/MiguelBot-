@@ -210,7 +210,7 @@ const HelpModal: React.FC<{
           <img
             className="neftali-motif"
             src="/ilustraciones/brujula.png"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            onError={(e) => { const fig = e.currentTarget.closest('figure'); if (fig) { (fig as HTMLElement).style.display = 'none'; } else { e.currentTarget.style.display = 'none'; } }}
             alt="Brújula: orientación para tu camino a la UAA"
             loading="lazy"
           />
@@ -392,7 +392,7 @@ const LandingView: React.FC<{
           <figure className="neftali-fig">
             <img
               src="/ilustraciones/heroe-decision.png"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              onError={(e) => { const fig = e.currentTarget.closest('figure'); if (fig) { (fig as HTMLElement).style.display = 'none'; } else { e.currentTarget.style.display = 'none'; } }}
               alt="Miguel Neftalí pensando ante un camino que se bifurca: decidir con criterio"
               loading="eager"
             />
@@ -639,61 +639,6 @@ const LandingView: React.FC<{
           </article>
         </div>
       </section>
-
-      {/* NEFTALÍ · Consultoría filosófica 1 a 1 */}
-      <section className="neftali-band" aria-label="Consultoría filosófica NEFTALÍ">
-        <div className="neftali-band-media">
-          <div>
-            <div className="section-eyebrow">NEFTALÍ · Pensamiento aplicado a la vida real</div>
-        <h2>¿Y si lo que tienes que decidir no es el examen?</h2>
-        <p>
-          Sesión de consultoría filosófica 1 a 1 de 60 minutos, en Aguascalientes u online: $400 MXN IVA incluido,
-          pago anticipado y cancelación gratuita con 24 h de aviso. Sin cargo si en los primeros 15 minutos se decide
-          derivar. Cinco diálogos: decisión, vocación, culpa, muerte y fe. No es terapia. Lic. en Filosofía, cédula
-          profesional 15424282.
-        </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-          <a
-            className="btn btn-gold"
-            href="https://cal.com/miguel-neftali-lopez-wnkrwr/consultoria"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Agenda tu sesión · $400
-            <ArrowRight size={14} />
-          </a>
-          <a className="btn btn-secondary" href="https://wa.me/524494959259" target="_blank" rel="noreferrer">
-            <MessageCircle size={15} />
-            Pregunta por WhatsApp
-          </a>
-        </div>
-          </div>
-          <figure className="neftali-fig" style={{ maxWidth: '320px', margin: 0, flexShrink: 0 }}>
-            <img
-              src="/ilustraciones/conversacion.png"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              alt="Dos personas conversando con tazas: una sesión de consultoría filosófica 1 a 1"
-              loading="lazy"
-            />
-          </figure>
-        </div>
-      </section>
-
-      <footer className="neftali-footer">
-        NEFTALÍ · Pensamiento aplicado a la vida real — Miguel Neftalí López, Lic. en Filosofía, cédula profesional
-        15424282 ·{' '}
-        <a href="/aviso-de-privacidad.html" target="_blank" rel="noreferrer">
-          Aviso de privacidad
-        </a>{' '}
-        ·{' '}
-        <a href="https://wa.me/524494959259" target="_blank" rel="noreferrer">
-          WhatsApp
-        </a>{' '}
-        ·{' '}
-        <a href="https://cal.com/miguel-neftali-lopez-wnkrwr/consultoria" target="_blank" rel="noreferrer">
-          Agenda tu sesión
-        </a>
-      </footer>
     </div>
   );
 };
@@ -1313,7 +1258,7 @@ const App = () => {
             <figure className="neftali-fig" style={{ marginTop: '16px' }}>
               <img
                 src="/ilustraciones/farol.png"
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                onError={(e) => { const fig = e.currentTarget.closest('figure'); if (fig) { (fig as HTMLElement).style.display = 'none'; } else { e.currentTarget.style.display = 'none'; } }}
                 alt="Farol en un sendero: claridad paso a paso en tu diagnóstico"
                 loading="lazy"
               />
@@ -1445,7 +1390,7 @@ const App = () => {
                       <figure className="neftali-fig" style={{ maxWidth: '320px' }}>
                         <img
                           src="/ilustraciones/libro-pregunta.png"
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          onError={(e) => { const fig = e.currentTarget.closest('figure'); if (fig) { (fig as HTMLElement).style.display = 'none'; } else { e.currentTarget.style.display = 'none'; } }}
                           alt="Libro abierto y nube de pensamiento: examina tus ideas antes de responder"
                           loading="lazy"
                         />
@@ -1599,6 +1544,61 @@ const App = () => {
           </main>
         </div>
       )}
+
+      {/* NEFTALÍ · Consultoría filosófica 1 a 1 */}
+      <section className="neftali-band" aria-label="Consultoría filosófica NEFTALÍ">
+        <div className="neftali-band-media">
+          <div>
+            <div className="section-eyebrow">NEFTALÍ · Pensamiento aplicado a la vida real</div>
+        <h2>¿Y si lo que tienes que decidir no es el examen?</h2>
+        <p>
+          Sesión de consultoría filosófica 1 a 1 de 60 minutos, en Aguascalientes u online: $400 MXN IVA incluido,
+          pago anticipado y cancelación gratuita con 24 h de aviso. Sin cargo si en los primeros 15 minutos se decide
+          derivar. Cinco diálogos: decisión, vocación, culpa, muerte y fe. No es terapia. Lic. en Filosofía, cédula
+          profesional 15424282.
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+          <a
+            className="btn btn-gold"
+            href="https://cal.com/miguel-neftali-lopez-wnkrwr/consultoria"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Agenda tu sesión · $400
+            <ArrowRight size={14} />
+          </a>
+          <a className="btn btn-secondary" href="https://wa.me/524494959259" target="_blank" rel="noreferrer">
+            <MessageCircle size={15} />
+            Pregunta por WhatsApp
+          </a>
+        </div>
+          </div>
+          <figure className="neftali-fig" style={{ maxWidth: '320px', margin: 0, flexShrink: 0 }}>
+            <img
+              src="/ilustraciones/conversacion.png"
+              onError={(e) => { const fig = e.currentTarget.closest('figure'); if (fig) { (fig as HTMLElement).style.display = 'none'; } else { e.currentTarget.style.display = 'none'; } }}
+              alt="Dos personas conversando con tazas: una sesión de consultoría filosófica 1 a 1"
+              loading="lazy"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <footer className="neftali-footer">
+        NEFTALÍ · Pensamiento aplicado a la vida real — Miguel Neftalí López, Lic. en Filosofía, cédula profesional
+        15424282 ·{' '}
+        <a href="/aviso-de-privacidad.html" target="_blank" rel="noreferrer">
+          Aviso de privacidad
+        </a>{' '}
+        ·{' '}
+        <a href="https://wa.me/524494959259" target="_blank" rel="noreferrer">
+          WhatsApp
+        </a>{' '}
+        ·{' '}
+        <a href="https://cal.com/miguel-neftali-lopez-wnkrwr/consultoria" target="_blank" rel="noreferrer">
+          Agenda tu sesión
+        </a>
+      </footer>
 
       {showHelp && (
         <HelpModal
