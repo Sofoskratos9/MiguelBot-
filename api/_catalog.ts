@@ -41,7 +41,7 @@ export const getServerCatalog = (now: Date = new Date()): Record<ProductId, Prod
     'reactivos-pack': {
       id: 'reactivos-pack',
       name: 'Banco de 50 Reactivos EXANI-II',
-      badge: `Best Seller · Edición ${cycle.targetAdmissionYear}`,
+      badge: `Edición ${cycle.targetAdmissionYear}`,
       tagline: `50 preguntas originales estilo CENEVAL ${cycle.targetAdmissionYear} en formato examen imprimible + hoja óptica de burbujas + formulario maestro + solucionario completo.`,
       priceMxn: parsePrice(process.env.PRICE_REACTIVOS_PACK_MXN, 149),
       compareAtMxn: 499,
@@ -55,17 +55,17 @@ export const getServerCatalog = (now: Date = new Date()): Record<ProductId, Prod
     },
     'nsdr-protocol': {
       id: 'nsdr-protocol',
-      name: 'Protocolo Anti-Ansiedad NSDR',
+      name: 'Guía para llegar con calma al examen',
       badge: 'Audio WAV + Guía PDF',
       tagline:
-        'Audio estéreo NSDR (Alpha 10 Hz → Theta 6 Hz) y manual visual con curva Yerkes-Dodson, 4 rescates en aula y tarjeta de bolsillo 60s.',
+        'Audio de calma y manual práctico con respiración guiada, 4 rescates en aula y tarjeta de bolsillo de 60 segundos para el día del examen.',
       priceMxn: parsePrice(process.env.PRICE_NSDR_PROTOCOL_MXN, 79),
       compareAtMxn: 199,
       ctaLabel: 'Obtener Audio y Guía',
       deliverables: [
-        'Audio Estéreo NSDR Alpha → Theta (.wav)',
-        'PDF Manual Clínico + Diagramas + Tarjeta de Bolsillo (10 págs.)',
-        'Reproductor NSDR Guiado 10 Minutos en Navegador',
+        'Audio de calma guiado (.wav)',
+        'PDF Manual Práctico + Diagramas + Tarjeta de Bolsillo (10 págs.)',
+        'Reproductor de audio guiado de 10 minutos en el navegador',
       ],
     },
   };

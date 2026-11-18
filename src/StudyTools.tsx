@@ -204,11 +204,19 @@ export const StudyTools: React.FC<StudyToolsProps> = ({ hasReactivosPack = false
   return (
     <div className="tools-viewport">
       <div className="tools-header-block">
-        <div className="section-eyebrow">Práctica Guiada y Cálculo Oficial · EXANI-II UAA</div>
+        <div className="section-eyebrow">NEFTALÍ · Pensamiento aplicado a la vida real — Práctica guiada y cálculo oficial · EXANI-II UAA</div>
         <h1 className="tools-h1">Calculadora, Simulador y Hábitos de Examen</h1>
         <p className="tools-sub">
           Proyecta tu puntaje en escala CENEVAL según tu carrera objetivo, entrena con reactivos reales comentados, regula la respiración antes del examen y revisa tu perfil RIASEC.
         </p>
+        <figure className="neftali-fig" style={{ maxWidth: '220px' }}>
+          <img
+            src="/ilustraciones/planta.png"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            alt="Regando una plantita: tu preparación crece con constancia"
+            loading="lazy"
+          />
+        </figure>
       </div>
 
       {/* Tool 1: CENEVAL Calculator & UAA Traffic Light */}

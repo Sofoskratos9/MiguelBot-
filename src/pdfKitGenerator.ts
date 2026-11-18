@@ -5,16 +5,16 @@ import { EXANI_50_BANK, type ExaniArea, type ExaniQuestion } from './exaniBank';
 
 type Rgb = [number, number, number];
 
-const C_OBSIDIAN: Rgb = [6, 9, 19];
-const C_NAVY: Rgb = [15, 22, 41];
-const C_GOLD: Rgb = [212, 175, 55];
-const C_GOLD_DARK: Rgb = [154, 120, 22];
-const C_GOLD_PALE: Rgb = [252, 248, 236];
+const C_OBSIDIAN: Rgb = [34, 49, 42];
+const C_NAVY: Rgb = [35, 68, 52];
+const C_GOLD: Rgb = [192, 95, 51];
+const C_GOLD_DARK: Rgb = [163, 78, 39];
+const C_GOLD_PALE: Rgb = [247, 227, 211];
 const C_SLATE_900: Rgb = [15, 23, 42];
 const C_SLATE_700: Rgb = [51, 65, 85];
 const C_SLATE_500: Rgb = [100, 116, 139];
 const C_BORDER: Rgb = [220, 226, 235];
-const C_EMERALD: Rgb = [6, 95, 70];
+const C_EMERALD: Rgb = [20, 83, 45];
 const C_EMERALD_BG: Rgb = [236, 253, 245];
 const C_BLUE: Rgb = [30, 64, 175];
 const C_BLUE_BG: Rgb = [239, 246, 255];
@@ -118,7 +118,7 @@ class LuxuryEditorialPdf {
     this.doc.setTextColor(...C_GOLD);
     this.doc.setFontSize(7.8);
     this.doc.text(
-      cleanPdf(`ESTRATEGA EDUCATIVO  |  METODO UAA ${this.cycle.targetAdmissionYear} (${this.cycle.editionMonthYear.toUpperCase()})`),
+      cleanPdf(`NEFTALI  |  METODO UAA ${this.cycle.targetAdmissionYear} (${this.cycle.editionMonthYear.toUpperCase()})`),
       this.margin + 16,
       25.5
     );
@@ -829,7 +829,7 @@ class LuxuryEditorialPdf {
         this.doc.setFont('helvetica', 'normal');
         this.doc.setTextColor(...C_SLATE_500);
         this.doc.text(
-          cleanPdf(`Miguel Lopez - Estratega Educativo UAA ${this.cycle.targetAdmissionYear}`),
+          cleanPdf(`Miguel Neftali Lopez - NEFTALI - EXANI-II UAA ${this.cycle.targetAdmissionYear}`),
           this.pageWidth - this.margin - 65,
           12.5
         );
@@ -861,12 +861,12 @@ export const buildSampleKitPdf = (): jsPDF => {
   const pdf = new LuxuryEditorialPdf(`MUESTRA GRATUITA EXANI-II ${cycle.shortCycleTag}`);
   pdf.addLuxuryCover({
     badge: `Muestra Gratuita Ampliada · ${cycle.editionLabel}`,
-    title: 'Metodo de Alto Rendimiento EXANI-II UAA',
+    title: 'Metodo NEFTALI EXANI-II UAA',
     subtitle: `Comprueba la profundidad visual, ejemplos guiados paso a paso, estructura oficial CENEVAL vigente (${EXAM_SOURCES_SNAPSHOT.lastSyncedLabel}) y plantillas listas para imprimir.`,
     edition: 'Mapa de esta Muestra Gratuita (5 Paginas)',
     accentColor: C_GOLD,
     tocItems: [
-      { code: '01', title: 'Ecosistema de 3 Packs y Flujo de Puntaje +120 pts', detail: 'Como se combinan neuroaprendizaje, 50 reactivos y regulacion NSDR' },
+      { code: '01', title: 'Ecosistema de 3 packs y flujo de puntaje', detail: 'Como se combinan neuroaprendizaje, 50 reactivos y audio de calma' },
       { code: '02', title: 'Desarme Filosofico con Ejemplo Completo Paso a Paso', detail: 'Analisis real de un parrafo EXANI-II y descarte de trampas A/B/C/D' },
       { code: '03', title: '3 Reactivos Resueltos (Lectura, Matematica y Analitico)', detail: 'Explicacion detallada de acierto y error comun en cada opcion' },
       { code: '04', title: 'Plantilla Imprimible Feynman + Plan de 7 Dias', detail: 'Herramienta inmediata para empezar tu preparacion hoy mismo' },
@@ -882,7 +882,7 @@ export const buildSampleKitPdf = (): jsPDF => {
     [
       ['1. Kit de Neuro-Aprendizaje', '$99 MXN', 'Manual visual 14 pags + 4 plantillas imprimibles + Audio Binaural 40 Hz (.wav 180s)'],
       ['2. Banco 50 Reactivos EXANI-II', '$149 MXN', 'Cuadernillo 25 pags (examen limpio + burbujas + formulario + 50 soluciones) + Simulador'],
-      ['3. Protocolo Anti-Ansiedad NSDR', '$79 MXN', 'Audio Alpha->Theta (.wav 240s) + Manual clinico 10 pags + Rescate 4 escenarios + Checklist'],
+      ['3. Guia para llegar con calma al examen', '$79 MXN', 'Audio de calma (.wav 240s) + Manual practico 10 pags + Rescate 4 escenarios + Checklist'],
     ],
     [52, 26, 98]
   );
@@ -1482,7 +1482,7 @@ export const buildReactivos50Pdf = (diagnosticReportText?: string | null): jsPDF
   const cycle = getUaaCycleContext();
   const pdf = new LuxuryEditorialPdf(`PACK 02 - BANCO DE 50 REACTIVOS EXANI-II ${cycle.targetAdmissionYear}`);
   pdf.addLuxuryCover({
-    badge: `Best Seller · ${cycle.editionLabel}`,
+    badge: `Edición ${cycle.editionLabel}`,
     title: 'Banco de 50 Reactivos EXANI-II UAA',
     subtitle: `Manual estrategico alineado a CENEVAL (${EXAM_SOURCES_SNAPSHOT.lastSyncedLabel}): grafica de metas UAA, formulario de 4 areas, cuadernillo limpio, hoja de burbujas 1-50 y solucionario.`,
     edition: 'Estructura Completa del Cuadernillo (25 Paginas)',
@@ -1725,14 +1725,14 @@ export const buildReactivos50Pdf = (diagnosticReportText?: string | null): jsPDF
 };
 
 // =========================================================================
-// 4. PACK 3: PROTOCOLO ANTI-ANSIEDAD NSDR ($79 MXN) -> 10 Paginas Clinicas
+// 4. PACK 3: GUIA PARA LLEGAR CON CALMA AL EXAMEN ($79 MXN) -> 10 paginas
 // =========================================================================
 export const buildNsdrProtocolPdf = (): jsPDF => {
   const cycle = getUaaCycleContext();
-  const pdf = new LuxuryEditorialPdf(`PACK 03 - PROTOCOLO ANTI-ANSIEDAD NSDR ${cycle.targetAdmissionYear}`);
+  const pdf = new LuxuryEditorialPdf(`PACK 03 - GUIA PARA LLEGAR CON CALMA AL EXAMEN ${cycle.targetAdmissionYear}`);
   pdf.addLuxuryCover({
     badge: `Pack 03 · ${cycle.editionMonthYear} · Audio WAV Alpha->Theta + Manual 10 Pags`,
-    title: 'Protocolo Anti-Ansiedad NSDR Pre-Examen',
+    title: 'Guía para llegar con calma al examen',
     subtitle: 'Regulacion vagal rapida en 10 minutos, curva Yerkes-Dodson, 3 diagramas de respiracion tactica, 4 rescates reales en aula, nutricion 72h y tarjeta de bolsillo.',
     edition: 'Contenido Completo del Manual Clinico (10 Paginas)',
     accentColor: [167, 139, 250],
@@ -1742,7 +1742,7 @@ export const buildNsdrProtocolPdf = (): jsPDF => {
       { code: '03', title: '3 Respiraciones Tacticas + 4 Rescates Reales en Aula', detail: 'Diagramas 4-7-8, Caja 4-4-4-4 y Suspiro Fisiologico Doble ante crisis' },
       { code: '04', title: 'Nutricion 72h UAA, Reencuadre Cognitivo y Tarjeta Recortable', detail: 'Desayuno estable, checklist imprimible, bitacora 7 sesiones y tarjeta 60s' },
     ],
-    footerNote: 'Escucha Protocolo-NSDR-AntiAnsiedad-MiguelLopez.wav la noche anterior y 30 minutos antes de salir rumbo al examen UAA.',
+    footerNote: 'Escucha Audio-Calma-Examen-MiguelNeftali.wav la noche anterior y 30 minutos antes de salir rumbo al examen UAA.',
   });
 
   // PAGE 2: MODULO 01 - YERKES-DODSON CURVE + AUTONOMIC TABLE
@@ -2091,7 +2091,7 @@ export const generateReactivos50Pdf = (diagnosticReportText?: string | null) => 
 
 export const generateNsdrProtocolPdf = () => {
   const { targetAdmissionYear } = getUaaCycleContext();
-  buildNsdrProtocolPdf().save(`Protocolo-Anti-Ansiedad-NSDR-UAA-${targetAdmissionYear}.pdf`);
+  buildNsdrProtocolPdf().save(`Guia-para-llegar-con-calma-al-examen-UAA-${targetAdmissionYear}.pdf`);
 };
 
 export const generateFullKitPdf = generateReactivos50Pdf;

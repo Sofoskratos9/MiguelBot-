@@ -13,7 +13,6 @@ import {
   Lock,
   Play,
   Shield,
-  ShieldCheck,
   Square,
   Unlock,
   Volume2,
@@ -75,7 +74,7 @@ const DEFAULT_PRODUCTS: ProductSpec[] = [
   {
     id: 'reactivos-pack',
     name: 'Banco de 50 Reactivos EXANI-II',
-    badge: `Best Seller · Edición ${initialCycle.targetAdmissionYear}`,
+    badge: `Edición ${initialCycle.targetAdmissionYear}`,
     tagline: `50 preguntas originales estilo CENEVAL ${initialCycle.targetAdmissionYear} en formato examen imprimible + hoja óptica de burbujas + formulario maestro + solucionario completo.`,
     priceMxn: 149,
     compareAtMxn: 499,
@@ -89,17 +88,17 @@ const DEFAULT_PRODUCTS: ProductSpec[] = [
   },
   {
     id: 'nsdr-protocol',
-    name: 'Protocolo Anti-Ansiedad NSDR',
+    name: 'Guía para llegar con calma al examen',
     badge: 'Audio WAV + Guía PDF',
     tagline:
-      'Audio estéreo NSDR (Alpha 10 Hz → Theta 6 Hz) y manual visual con curva Yerkes-Dodson, 4 rescates en aula y tarjeta de bolsillo 60s.',
+      'Audio de calma y manual práctico con respiración guiada, 4 rescates en aula y tarjeta de bolsillo de 60 segundos para el día del examen.',
     priceMxn: 79,
     compareAtMxn: 199,
     ctaLabel: 'Obtener Audio y Guía',
     deliverables: [
-      'Audio Estéreo NSDR Alpha → Theta (.wav)',
-      'PDF Manual Clínico + Diagramas + Tarjeta de Bolsillo (10 págs.)',
-      'Reproductor NSDR Guiado 10 Minutos en Navegador',
+      'Audio de calma guiado (.wav)',
+      'PDF Manual Práctico + Diagramas + Tarjeta de Bolsillo (10 págs.)',
+      'Reproductor de audio guiado de 10 minutos en el navegador',
     ],
   },
 ];
@@ -330,7 +329,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                 particleCount: 70,
                 spread: 65,
                 origin: { y: 0.65 },
-                colors: ['#b87e24', '#1b5e46', '#274b73'],
+                colors: ['#C96F4A', '#14532D', '#2E6B45', '#D9A441'],
               });
               window.history.replaceState({}, '', window.location.pathname);
               await triggerProductDeliverable(verifyData.productId, 'all');
@@ -493,7 +492,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
     return {
       code: 'CUADERNO 03',
       pages: '10 páginas + Audio 10 min',
-      format: 'Ondas Alpha → Theta + Tarjeta bolsillo',
+      format: 'Respiración guiada + Tarjeta bolsillo',
       icon: <Shield size={20} strokeWidth={1.7} />,
     };
   };
@@ -508,6 +507,14 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
         <p className="packs-sub">
           Material editorial listo para imprimir, pistas estéreo .wav sin compresión y simulador de 50 reactivos. Escucha las muestras o descarga la guía gratuita antes de decidir.
         </p>
+        <figure className="neftali-fig" style={{ maxWidth: '320px', margin: '0 auto 20px' }}>
+          <img
+            src="/ilustraciones/puerta.png"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            alt="Puerta entreabierta: elige por dónde seguir tu preparación"
+            loading="lazy"
+          />
+        </figure>
 
         <div className="packs-verify-strip">
           <button
@@ -540,8 +547,8 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
           >
             {playingAudio?.kind === 'nsdr-calm' && playingAudio.isPreview ? <Square size={13} /> : <Headphones size={14} />}
             {playingAudio?.kind === 'nsdr-calm' && playingAudio.isPreview
-              ? `Detener Muestra NSDR (${15 - playingAudio.secondsElapsed}s)`
-              : 'Escuchar Muestra NSDR (15s)'}
+              ? `Detener muestra (${15 - playingAudio.secondsElapsed}s)`
+              : 'Escuchar muestra de calma (15 s)'}
           </button>
         </div>
       </div>
@@ -732,7 +739,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                             onClick={() => triggerProductDeliverable('nsdr-protocol', 'audio')}
                           >
                             <Download size={15} />
-                            Descargar Audio NSDR (.wav)
+                            Descargar audio (.wav)
                           </button>
                           <div className="pack-dual-row">
                             <button
@@ -756,7 +763,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                               )}
                               {playingAudio?.kind === 'nsdr-calm' && !playingAudio.isPreview
                                 ? 'Detener'
-                                : 'Reproducir NSDR'}
+                                : 'Reproducir audio de calma'}
                             </button>
                           </div>
                         </>
@@ -785,9 +792,15 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
 
       {/* Trust Bar */}
       <div className="privacy-note packs-trust-footer">
-        <ShieldCheck size={18} style={{ color: 'var(--gold-400)', flexShrink: 0 }} />
+        <img
+          className="neftali-motif-sm"
+          src="/ilustraciones/balanza.png"
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          alt="Balanza: pesa lo que de verdad importa antes de decidir"
+          loading="lazy"
+        />
         <span>
-          <strong>Checkout oficial con Stripe + Descarga Directa:</strong> Paga de forma encriptada con tarjeta, Apple Pay o Google Pay; al confirmar regresas automáticamente aquí para descargar tu PDF y Audio WAV al instante.
+          <strong>Checkout oficial con Stripe + Descarga Directa:</strong> Paga de forma encriptada con tarjeta, Apple Pay o Google Pay; al confirmar regresas automáticamente aquí para descargar tu PDF y Audio WAV al instante. Lee nuestro <a href="/aviso-de-privacidad.html" target="_blank" rel="noreferrer">aviso de privacidad</a> y, si quieres acompañamiento 1 a 1, la Mentoría EXANI-UAA (4 sesiones, 10 lugares, $1,600 MXN) se acuerda por <a href="https://wa.me/524494550463" target="_blank" rel="noreferrer">WhatsApp</a>.
         </span>
       </div>
 

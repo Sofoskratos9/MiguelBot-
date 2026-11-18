@@ -105,7 +105,7 @@ export const downloadNeuroAudioWav = () => {
 
 export const downloadNsdrAudioWav = () => {
   const blob = synthesizeStereoWavBlob('nsdr-calm', 240);
-  triggerBlobDownload(blob, 'Protocolo-NSDR-AntiAnsiedad-MiguelLopez.wav');
+  triggerBlobDownload(blob, 'Audio-Calma-Examen-MiguelNeftali.wav');
 };
 
 /**

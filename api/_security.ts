@@ -64,7 +64,7 @@ export const getKitPriceMxn = (): number => {
 export const getKitProductName = (): string => {
   const cycle = getUaaCycleContext();
   return (
-    process.env.KIT_PRODUCT_NAME || `Kit Estratégico EXANI-II UAA ${cycle.targetAdmissionYear} (PDF Completo)`
+    process.env.KIT_PRODUCT_NAME || `Material EXANI-II UAA ${cycle.targetAdmissionYear} (PDF Completo)`
   ).trim();
 };
 

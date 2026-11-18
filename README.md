@@ -1,6 +1,6 @@
-# Miguel López · Estratega Educativo · EXANI-II UAA
+# Miguel Neftalí López · NEFTALÍ · EXANI-II UAA
 
-Plataforma de diagnóstico adaptativo, laboratorio de alto rendimiento y packs descargables (PDF editoriales + Audio WAV + Simulador de 50 Reactivos) con pagos directos y descarga automática vía **Stripe**, actualización automática por ciclo mensual/anual y sincronización con fuentes oficiales de **CENEVAL** y **UAA**.
+Plataforma NEFTALÍ de diagnóstico adaptativo, laboratorio de preparación y packs descargables (PDF editoriales + Audio WAV + Simulador de 50 Reactivos) con pagos directos y descarga automática vía **Stripe**, actualización automática por ciclo mensual/anual y sincronización con fuentes oficiales de **CENEVAL** y **UAA**.
 
 ## Funcionalidades principales
 
@@ -13,10 +13,10 @@ Plataforma de diagnóstico adaptativo, laboratorio de alto rendimiento y packs d
   - Simulador Interactivo EXANI-II (4 reactivos muestra gratis + 50 reactivos completos al desbloquear el pack).
   - Entrenador de Regulación Autonómica (`4-7-8` y Respiración Táctica `4-4-4-4`).
   - Práctica guiada de *Desarme Filosófico* y Orientador Vocacional rápido (`RIASEC`).
-- **3 Packs de Alto Rendimiento con descarga inmediata vía Stripe**:
+- **3 packs con descarga inmediata vía Stripe**:
   1. **Kit de Neuro-Aprendizaje** (`$99 MXN`): Cuaderno visual + 4 plantillas imprimibles + casos resueltos en PDF (`14 págs.`) + Audio Binaural 40 Hz (`.wav`) + reproductor en línea.
   2. **Banco de 50 Reactivos EXANI-II** (`$149 MXN`): Cuadernillo formato examen + hoja óptica de burbujas + formulario maestro + solucionario completo en PDF (`25 págs.`) + Simulador Interactivo completo.
-  3. **Protocolo Anti-Ansiedad NSDR** (`$79 MXN`): Audio estéreo Alpha→Theta (`.wav`) + Manual clínico con curva Yerkes-Dodson y tarjeta recortable de bolsillo en PDF (`10 págs.`) + reproductor guiado.
+  3. **Guía para llegar con calma al examen** (`$79 MXN`): Audio de calma guiado (`.wav`) + Manual práctico con respiración guiada y tarjeta recortable de bolsillo en PDF (`10 págs.`) + reproductor guiado.
 
 ## Ejecución local
 

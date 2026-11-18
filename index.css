@@ -1,54 +1,86 @@
 :root {
-  /* Papel Marfil, Tinta UAA, Latón Cálido y Pino Académico */
-  --bg-paper: #fbf8f1;
-  --bg-paper-alt: #f3ede0;
-  --bg-sheet: #ffffff;
-  --bg-sheet-hover: #fdfbf7;
-  --bg-obsidian: #f5efe2;
-  --bg-elevated: #ffffff;
-  --bg-card: #ffffff;
-  --bg-card-hover: #fcf9f2;
+  /* NEFTALÍ · SISTEMA-VISUAL.md (17 nov 2026). Paleta exacta.
+     Terracota/ocre/salvia/azul: solo acentos, nunca texto ni fondo.
+     Tinta #2B2B26: solo trazo de ilustración, nunca texto de interfaz.
+     Una sola familia: sans grotesca de sistema, sin serif, sin manuscrita. */
+  --neftali-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --neftali-cream: #F5F1EA;
+  --neftali-cream-paper: #FBF8F1;
+  --neftali-cream-deep: #EFE7D8;
+  --neftali-green: #14532D;
+  --neftali-green-deep: #0E3B20;
+  --neftali-green-mid: #2E6B45;
+  --neftali-terracotta: #C96F4A;
+  --neftali-terracotta-deep: #A8542F;
+  --neftali-ochre: #D9A441;
+  --neftali-sage: #8AA899;
+  --neftali-slate-blue: #6B8CAE;
+  --neftali-ink: #2B2B26;
+  --neftali-radius-card: 12px;
+  --neftali-radius-button: 10px;
+  --neftali-border: 2px solid #14532D;
+  --neftali-divider: 3px solid #14532D;
 
-  --ink-900: #162336;
-  --ink-800: #22334d;
-  --ink-700: #36475e;
+  /* Alias heredados: apuntan a la paleta NEFTALÍ (nunca a tinta ni a dorado). */
+  --neftali-cream-soft: #FBF8F1;
+  --neftali-paper: #FBF8F1;
+  --neftali-green-btn: #14532D;
+  --neftali-terra: #C96F4A;
+  --neftali-terra-deep: #A8542F;
+  --neftali-terra-soft: #FBE9DC;
+  --neftali-ink-soft: #2E6B45;
+  --neftali-line: #EFE7D8;
 
-  --gold-500: #b87e24;
-  --gold-400: #996415;
-  --gold-300: #7c4f10;
-  --gold-wash: #faf2df;
+  --bg-paper: #F5F1EA;
+  --bg-paper-alt: #EFE7D8;
+  --bg-sheet: #FBF8F1;
+  --bg-sheet-hover: #FBF8F1;
+  --bg-obsidian: #F5F1EA;
+  --bg-elevated: #FBF8F1;
+  --bg-card: #FBF8F1;
+  --bg-card-hover: #FBF8F1;
 
-  --emerald-500: #1b5e46;
-  --emerald-400: #17543e;
-  --emerald-wash: #ebf5f0;
+  --ink-900: #14532D;
+  --ink-800: #0E3B20;
+  --ink-700: #2E6B45;
 
-  --slate-500: #274b73;
-  --slate-wash: #edf2f8;
+  --gold-500: #C96F4A;
+  --gold-400: #2E6B45;
+  --gold-300: #14532D;
+  --gold-wash: #FBE9DC;
 
-  --amber-400: #9c5b14;
-  --red-400: #b24432;
-  --red-wash: #fceceb;
+  --emerald-500: #14532D;
+  --emerald-400: #0E3B20;
+  --emerald-wash: #E7EFE8;
 
-  --border-subtle: #e4dccb;
-  --border-strong: #cfc4ae;
-  --border-gold: #d5b983;
+  --slate-500: #6B8CAE;
+  --slate-wash: #EAF0F5;
 
-  --text-primary: #162336;
-  --text-secondary: #3c4b60;
-  --text-muted: #667387;
+  --amber-400: #2E6B45;
+  --red-400: #B24432;
+  --red-wash: #FCECEB;
 
-  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --border-subtle: #EFE7D8;
+  --border-strong: #14532D;
+  --border-gold: #EAC9B5;
+
+  --text-primary: #14532D;
+  --text-secondary: #2E6B45;
+  --text-muted: #2E6B45;
+
+  --font-body: var(--neftali-font);
+  --font-serif: var(--neftali-font);
+  --font-hand: var(--neftali-font);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
 
-  --shadow-sheet: 0 1px 2px rgba(22, 35, 54, 0.04), 0 10px 26px -14px rgba(22, 35, 54, 0.12);
-  --shadow-lift: 0 4px 10px rgba(22, 35, 54, 0.06), 0 18px 34px -16px rgba(22, 35, 54, 0.14);
-  --shadow-modal: 0 24px 56px -12px rgba(22, 35, 54, 0.24);
+  --shadow-sheet: 0 1px 2px rgba(20, 83, 45, 0.04), 0 10px 26px -14px rgba(20, 83, 45, 0.12);
+  --shadow-lift: 0 4px 10px rgba(20, 83, 45, 0.06), 0 18px 34px -16px rgba(20, 83, 45, 0.14);
+  --shadow-modal: 0 24px 56px -12px rgba(20, 83, 45, 0.24);
   --ease-expo: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -66,10 +98,7 @@ body {
   font-family: var(--font-body);
   color: var(--text-primary);
   background-color: var(--bg-paper);
-  background-image:
-    radial-gradient(ellipse 80% 50% at 15% 0%, rgba(213, 185, 131, 0.18), transparent 60%),
-    radial-gradient(ellipse 70% 45% at 90% 100%, rgba(39, 75, 115, 0.05), transparent 65%);
-  background-attachment: fixed;
+  background-image: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -103,12 +132,12 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(22, 35, 54, 0.18);
+  background: rgba(20, 83, 45, 0.18);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(22, 35, 54, 0.34);
+  background: rgba(20, 83, 45, 0.34);
 }
 
 .text-gold {
@@ -225,12 +254,12 @@ body::before {
 
 .top-nav-link:hover {
   color: var(--ink-900);
-  background: rgba(22, 35, 54, 0.045);
+  background: rgba(20, 83, 45, 0.045);
 }
 
 .top-nav-link.is-active {
   color: var(--ink-900);
-  background: rgba(22, 35, 54, 0.055);
+  background: rgba(20, 83, 45, 0.055);
 }
 
 .top-nav-link.is-active::after {
@@ -321,53 +350,57 @@ body::before {
   border-radius: 8px;
 }
 
-/* Primary Action: Deep Academic Ink */
+/* Primario NEFTALÍ: verde oscuro, texto blanco. Nunca terracota ni dorado. */
 .btn-gold {
-  background: var(--ink-900);
-  color: #fbf8f1;
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(22, 35, 54, 0.18);
+  background: var(--neftali-green);
+  color: #ffffff;
+  font-weight: 700;
+  border: 2px solid var(--neftali-green);
+  border-radius: var(--neftali-radius-button);
+  box-shadow: 0 4px 12px rgba(20, 83, 45, 0.16);
 }
 
 .btn-gold:hover:not(:disabled) {
-  background: var(--ink-800);
-  box-shadow: 0 6px 14px rgba(22, 35, 54, 0.22);
+  background: var(--neftali-green-deep);
+  border-color: var(--neftali-green-deep);
+  box-shadow: 0 6px 16px rgba(20, 83, 45, 0.2);
 }
 
-/* Brass Stamp Variant */
+/* Variante sello: secundario con borde verde (antes latón/dorado) */
 .btn-brass {
-  background: #c88d2c;
-  color: #162336;
+  background: transparent;
+  color: var(--neftali-green);
   font-weight: 700;
-  border-color: #b47c21;
+  border: 2px solid var(--neftali-green);
 }
 
 .btn-brass:hover:not(:disabled) {
-  background: #d39a3b;
+  background: var(--neftali-cream-deep);
 }
 
-/* Secondary / Folio Action */
+/* Secundario NEFTALÍ: transparente, borde 2 px verde, texto verde */
 .btn-obsidian {
-  background: var(--bg-paper);
-  color: var(--ink-900);
-  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--neftali-green);
+  border: 2px solid var(--neftali-green);
+  border-radius: var(--neftali-radius-button);
 }
 
 .btn-obsidian:hover:not(:disabled) {
-  background: var(--bg-paper-alt);
-  border-color: var(--ink-900);
+  background: var(--neftali-cream-deep);
+  border-color: var(--neftali-green);
 }
 
 .btn-secondary {
-  background: var(--bg-sheet);
-  color: var(--text-primary);
-  border: 1px solid var(--border-strong);
-  box-shadow: 0 1px 2px rgba(22, 35, 54, 0.04);
+  background: transparent;
+  color: var(--neftali-green);
+  border: 2px solid var(--neftali-green);
+  border-radius: var(--neftali-radius-button);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--bg-paper-alt);
-  border-color: var(--ink-800);
+  background: var(--neftali-cream-deep);
+  border-color: var(--neftali-green-deep);
 }
 
 .btn-emerald {
@@ -377,7 +410,7 @@ body::before {
 }
 
 .btn-emerald:hover:not(:disabled) {
-  background: #154c38;
+  background: var(--neftali-green-deep);
 }
 
 .btn-danger-soft {
@@ -624,7 +657,7 @@ body::before {
 .specimen-switch-btn.is-active {
   background: var(--bg-sheet);
   color: var(--ink-900);
-  box-shadow: 0 1px 2px rgba(22, 35, 54, 0.08);
+  box-shadow: 0 1px 2px rgba(20, 83, 45, 0.08);
 }
 
 .specimen-q {
@@ -920,7 +953,7 @@ body::before {
   height: 42px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(22, 35, 54, 0.12);
+  border: 1px solid rgba(20, 83, 45, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1048,7 +1081,7 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(22, 35, 54, 0.54);
+  background: rgba(20, 83, 45, 0.54);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -1191,7 +1224,7 @@ body::before {
 .field-input:focus,
 .field-select:focus {
   border-color: var(--ink-900);
-  box-shadow: 0 0 0 3px rgba(22, 35, 54, 0.08);
+  box-shadow: 0 0 0 3px rgba(20, 83, 45, 0.08);
 }
 
 /* --- Study Tools & Calculator --- */
@@ -1881,7 +1914,7 @@ input[type='range'] {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(22, 35, 54, 0.45);
+    background: rgba(20, 83, 45, 0.45);
     z-index: 45;
   }
 
@@ -1948,7 +1981,7 @@ input[type='range'] {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--gold-500), var(--emerald-500));
+  background: var(--neftali-green);
   border-radius: 999px;
   transition: width 0.4s var(--ease-expo);
 }
@@ -2110,7 +2143,7 @@ input[type='range'] {
   background: var(--bg-sheet);
   border: 1px solid var(--border-subtle);
   color: var(--text-primary);
-  box-shadow: 0 1px 2px rgba(22, 35, 54, 0.04);
+  box-shadow: 0 1px 2px rgba(20, 83, 45, 0.04);
 }
 
 .msg-row.is-user .msg-bubble {
@@ -2363,4 +2396,136 @@ input[type='range'] {
 .send-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* --- NEFTALÍ · SISTEMA-VISUAL.md: composición --- */
+h1, h2, h3, .hero-title, .packs-h1, .welcome-h1, .tools-h1, .modal-title-serif,
+.pack-title, .journey-title {
+  font-family: var(--neftali-font);
+  font-weight: 800;
+  color: var(--neftali-green);
+  line-height: 1.15;
+}
+.hero-title em {
+  font-style: normal;
+  text-decoration: underline;
+  text-decoration-color: var(--neftali-terracotta);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 4px;
+}
+.section-eyebrow,
+.hero-dateline,
+.welcome-eyebrow {
+  font-family: var(--neftali-font);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--neftali-green-mid);
+}
+.pack-card,
+.hero-specimen-card,
+.welcome-card,
+.tool-card,
+.setup-card,
+.modal-card,
+.confirmed-download-dock {
+  border: 2px solid var(--neftali-green);
+  border-radius: var(--neftali-radius-card);
+  box-shadow: 0 6px 18px rgba(20, 83, 45, 0.1);
+}
+.msg-bubble {
+  border: 1.5px solid var(--neftali-cream-deep);
+  border-radius: var(--neftali-radius-card);
+}
+.msg-bubble.is-report {
+  border-color: var(--neftali-terracotta);
+}
+.pack-card.is-featured {
+  border-color: var(--neftali-green);
+  box-shadow: 0 8px 22px rgba(20, 83, 45, 0.14);
+}
+.neftali-band {
+  border: 2px solid var(--neftali-green);
+  border-radius: var(--neftali-radius-card);
+  background: var(--neftali-cream-paper);
+  box-shadow: 0 6px 18px rgba(20, 83, 45, 0.1);
+  padding: 28px;
+  margin: 48px auto 8px;
+  max-width: 1080px;
+}
+.neftali-band h2 {
+  font-size: clamp(24px, 3vw, 32px);
+  margin: 0 0 10px;
+}
+.neftali-band p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0 0 16px;
+}
+.neftali-band-media {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+}
+.neftali-band-media > div {
+  flex: 1;
+  min-width: 0;
+}
+.neftali-footer {
+  max-width: 1080px;
+  margin: 40px auto 24px;
+  padding: 18px 4px 0;
+  border-top: var(--neftali-divider);
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  text-align: center;
+}
+.neftali-footer a {
+  color: var(--neftali-green);
+  font-weight: 700;
+}
+/* Ilustraciones NEFTALÍ: fondo crema, borde verde, sin texto dentro */
+.neftali-fig {
+  margin: 0 0 16px;
+}
+.neftali-fig img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 2px solid var(--neftali-green);
+  border-radius: var(--neftali-radius-card);
+  background: var(--neftali-cream);
+}
+.neftali-fig-cap {
+  font-size: 13px;
+  color: var(--neftali-green-mid);
+  margin-top: 8px;
+}
+.neftali-motif {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid var(--neftali-green);
+  background: var(--neftali-cream);
+  flex-shrink: 0;
+}
+.neftali-motif-sm {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid var(--neftali-green);
+  background: var(--neftali-cream);
+  flex-shrink: 0;
+}
+@media (max-width: 720px) {
+  .neftali-band-media {
+    flex-direction: column;
+  }
+  .neftali-band-media img {
+    max-width: 100%;
+  }
 }

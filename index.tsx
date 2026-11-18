@@ -15,6 +15,7 @@ import {
   GraduationCap,
   HelpCircle,
   KeyRound,
+  MessageCircle,
   Menu,
   RotateCcw,
   Send,
@@ -135,6 +136,17 @@ const MessageBubble: React.FC<{
                 Descargar Pack 50 Reactivos
               </button>
             )}
+            {isReport && (
+              <a
+                href="https://wa.me/524494550463?text=Hola%20Miguel%2C%20termin%C3%A9%20mi%20diagn%C3%B3stico%20EXANI-II%20y%20quiero%20informaci%C3%B3n%20de%20la%20Mentor%C3%ADa%20EXANI-UAA"
+                target="_blank"
+                rel="noreferrer"
+                className="msg-action-btn is-primary"
+              >
+                <MessageCircle size={13} />
+                Mentoría EXANI-UAA · 4 sesiones · $1,600
+              </a>
+            )}
             <button type="button" className="msg-action-btn" onClick={handleCopy}>
               {copied ? <Check size={13} /> : <Copy size={13} />}
               {copied ? 'Copiado' : isReport ? 'Copiar Diagnóstico' : 'Copiar'}
@@ -192,8 +204,20 @@ const HelpModal: React.FC<{
         </div>
 
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.55, marginTop: 0 }}>
-          Plataforma académica de diagnóstico y alto rendimiento EXANI-II {getUaaCycleContext().shortCycleTag} — Miguel López.
+          Plataforma NEFTALÍ de diagnóstico y preparación EXANI-II {getUaaCycleContext().shortCycleTag} — Miguel Neftalí López, Lic. en Filosofía (cédula profesional 15424282). Pensamiento aplicado a la vida real.
         </p>
+        <figure className="neftali-fig" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img
+            className="neftali-motif"
+            src="/ilustraciones/brujula.png"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            alt="Brújula: orientación para tu camino a la UAA"
+            loading="lazy"
+          />
+          <figcaption className="neftali-fig-cap">
+            Orientación: cada paso del diagnóstico te acerca a tu carrera.
+          </figcaption>
+        </figure>
         <ul style={{ paddingLeft: '18px', fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
           <li style={{ marginBottom: '6px' }}>
             <strong>Diagnóstico (30 reactivos):</strong> Responde las 4 preguntas iniciales y resuelve 6 bloques de 5 reactivos usando los botones rápidos A/B/C.
@@ -206,6 +230,27 @@ const HelpModal: React.FC<{
           </li>
           <li>
             <strong>Actualización continua ({EXAM_SOURCES_SNAPSHOT.lastSyncedLabel}):</strong> Estructura alineada con CENEVAL ({EXAM_SOURCES_SNAPSHOT.cenevalOfficial.duration}) y fechas del ciclo {getUaaCycleContext().shortCycleTag}.
+          </li>
+          <li style={{ marginBottom: '6px' }}>
+            <strong>Contacto:</strong> ¿Dudas o acompañamiento 1 a 1? Escríbele a Miguel por{' '}
+            <a href="https://wa.me/524494550463" target="_blank" rel="noreferrer">
+              WhatsApp
+            </a>{' '}
+            (Mentoría EXANI-UAA: 4 sesiones, 10 lugares, $1,600 MXN).
+          </li>
+          <li style={{ marginBottom: '6px' }}>
+            <strong>Aviso de privacidad:</strong> Lee cómo tratamos tus datos personales en el{' '}
+            <a href="/aviso-de-privacidad.html" target="_blank" rel="noreferrer">
+              aviso de privacidad
+            </a>
+            .
+          </li>
+          <li>
+            <strong>Consultoría filosófica NEFTALÍ:</strong> Sesión de 60 min, $400 MXN IVA incluido, pago anticipado y cancelación gratuita con 24 h de aviso. Sin cargo si en los primeros 15 min se decide derivar. No es terapia.{' '}
+            <a href="https://cal.com/miguel-neftali-lopez-wnkrwr/consultoria" target="_blank" rel="noreferrer">
+              Agenda tu sesión
+            </a>
+            .
           </li>
         </ul>
 
@@ -290,7 +335,7 @@ const LandingView: React.FC<{
       <section className="editorial-hero" aria-label="Introducción y prueba interactiva">
         <div>
           <div className="hero-dateline">
-            Ciclo {cycle.shortCycleTag} · Método Miguel López
+            NEFTALÍ · Pensamiento aplicado a la vida real — Ciclo {cycle.shortCycleTag}
           </div>
 
           <h1 className="hero-title">
@@ -344,6 +389,14 @@ const LandingView: React.FC<{
 
         {/* Interactive Live Specimen Card */}
         <div className="hero-specimen-wrap">
+          <figure className="neftali-fig">
+            <img
+              src="/ilustraciones/heroe-decision.png"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              alt="Miguel Neftalí pensando ante un camino que se bifurca: decidir con criterio"
+              loading="eager"
+            />
+          </figure>
           <div className="hero-specimen-card" role="region" aria-label="Prueba rápida de reactivo EXANI-II">
             <div className="specimen-top">
               <span className="specimen-label">Prueba 1 reactivo ahora</span>
@@ -521,7 +574,7 @@ const LandingView: React.FC<{
             <div className="pack-folio-band">
               <div className="pack-folio-top">
                 <span className="pack-catalog-code">CUADERNO 02</span>
-                <span className="pack-badge">Más elegido · {cycle.targetAdmissionYear}</span>
+                <span className="pack-badge">PDF + Simulador · {cycle.targetAdmissionYear}</span>
               </div>
               <div className="pack-folio-spec">
                 <div className="pack-folio-meta">
@@ -560,7 +613,7 @@ const LandingView: React.FC<{
               <div className="pack-folio-spec">
                 <div className="pack-folio-meta">
                   10 páginas + Audio 10 min
-                  <span>Ondas Alpha → Theta + Tarjeta</span>
+                  <span>Respiración guiada + Tarjeta</span>
                 </div>
                 <div className="pack-folio-emblem" aria-hidden="true">
                   <Shield size={20} strokeWidth={1.7} />
@@ -568,9 +621,9 @@ const LandingView: React.FC<{
               </div>
             </div>
             <div className="pack-body">
-              <h3 className="pack-title">Protocolo Anti-Ansiedad NSDR</h3>
+              <h3 className="pack-title">Guía para llegar con calma al examen</h3>
               <p className="pack-tagline">
-                Sesión sonora guiada para bajar pulsaciones antes del examen, junto con manual práctico y tarjeta de bolsillo de 60 segundos.
+                Audio de calma y manual práctico con respiración guiada para llegar tranquilo al examen, junto con tarjeta de bolsillo de 60 segundos.
               </p>
               <div className="pack-footer">
                 <div className="pack-price-line">
@@ -586,6 +639,61 @@ const LandingView: React.FC<{
           </article>
         </div>
       </section>
+
+      {/* NEFTALÍ · Consultoría filosófica 1 a 1 */}
+      <section className="neftali-band" aria-label="Consultoría filosófica NEFTALÍ">
+        <div className="neftali-band-media">
+          <div>
+            <div className="section-eyebrow">NEFTALÍ · Pensamiento aplicado a la vida real</div>
+        <h2>¿Y si lo que tienes que decidir no es el examen?</h2>
+        <p>
+          Sesión de consultoría filosófica 1 a 1 de 60 minutos, en Aguascalientes u online: $400 MXN IVA incluido,
+          pago anticipado y cancelación gratuita con 24 h de aviso. Sin cargo si en los primeros 15 minutos se decide
+          derivar. Cinco diálogos: decisión, vocación, culpa, muerte y fe. No es terapia. Lic. en Filosofía, cédula
+          profesional 15424282.
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+          <a
+            className="btn btn-gold"
+            href="https://cal.com/miguel-neftali-lopez-wnkrwr/consultoria"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Agenda tu sesión · $400
+            <ArrowRight size={14} />
+          </a>
+          <a className="btn btn-secondary" href="https://wa.me/524494550463" target="_blank" rel="noreferrer">
+            <MessageCircle size={15} />
+            Pregunta por WhatsApp
+          </a>
+        </div>
+          </div>
+          <figure className="neftali-fig" style={{ maxWidth: '320px', margin: 0, flexShrink: 0 }}>
+            <img
+              src="/ilustraciones/conversacion.png"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              alt="Dos personas conversando con tazas: una sesión de consultoría filosófica 1 a 1"
+              loading="lazy"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <footer className="neftali-footer">
+        NEFTALÍ · Pensamiento aplicado a la vida real — Miguel Neftalí López, Lic. en Filosofía, cédula profesional
+        15424282 ·{' '}
+        <a href="/aviso-de-privacidad.html" target="_blank" rel="noreferrer">
+          Aviso de privacidad
+        </a>{' '}
+        ·{' '}
+        <a href="https://wa.me/524494550463" target="_blank" rel="noreferrer">
+          WhatsApp
+        </a>{' '}
+        ·{' '}
+        <a href="https://cal.com/miguel-neftali-lopez-wnkrwr/consultoria" target="_blank" rel="noreferrer">
+          Agenda tu sesión
+        </a>
+      </footer>
     </div>
   );
 };
@@ -630,7 +738,7 @@ const App = () => {
   // Check DeepSeek config + verify any saved product tokens on mount
   useEffect(() => {
     const cycle = getUaaCycleContext();
-    document.title = `Miguel López · Estratega Educativo · EXANI-II ${cycle.shortCycleTag}`;
+    document.title = `Miguel Neftalí López · NEFTALÍ · EXANI-II ${cycle.shortCycleTag}`;
     let cancelled = false;
 
     const checkConfig = async () => {
@@ -851,7 +959,7 @@ const App = () => {
         particleCount: 65,
         spread: 62,
         origin: { y: 0.72 },
-        colors: ['#b87e24', '#1b5e46', '#274b73', '#d4962a'],
+        colors: ['#C96F4A', '#14532D', '#2E6B45', '#D9A441'],
       });
     }
   }, [isLoading, isStreaming, progress.stage]);
@@ -1025,10 +1133,10 @@ const App = () => {
               onClick={() => navigateToTab('landing')}
               aria-label="Ir al inicio"
             >
-              <div className="monogram-box">M</div>
+              <div className="monogram-box">N</div>
               <div className="monogram-text">
-                <span className="monogram-name">Miguel López</span>
-                <span className="monogram-role">Preparación EXANI-II · UAA</span>
+                <span className="monogram-name">NEFTALÍ</span>
+                <span className="monogram-role">Miguel Neftalí López · EXANI-II UAA</span>
               </div>
             </button>
           </div>
@@ -1202,6 +1310,16 @@ const App = () => {
               </div>
             </div>
 
+            <figure className="neftali-fig" style={{ marginTop: '16px' }}>
+              <img
+                src="/ilustraciones/farol.png"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                alt="Farol en un sendero: claridad paso a paso en tu diagnóstico"
+                loading="lazy"
+              />
+              <figcaption className="neftali-fig-cap">El camino se ve paso a paso.</figcaption>
+            </figure>
+
             <div>
               <div className="sidebar-actions">
                 <button
@@ -1215,6 +1333,20 @@ const App = () => {
                   <FileText size={15} />
                   Cuadernos PDF &amp; Audio WAV
                 </button>
+
+                <a
+                  className="btn btn-gold"
+                  href="https://wa.me/524494550463?text=Hola%20Miguel%2C%20quiero%20informaci%C3%B3n%20de%20la%20Mentor%C3%ADa%20EXANI-UAA"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MessageCircle size={15} />
+                  Mentoría EXANI-UAA · 4 sesiones · $1,600
+                </a>
+                <a className="btn btn-secondary" href="https://wa.me/524494550463" target="_blank" rel="noreferrer">
+                  <MessageCircle size={15} />
+                  Escríbeme por WhatsApp
+                </a>
 
                 {progress.latestReportText && (
                   <>
@@ -1310,10 +1442,18 @@ const App = () => {
                 <div className="messages-viewport">
                   {!hasStarted && messages.length === 0 ? (
                     <section className="welcome-card" aria-label="Bienvenida al diagnóstico">
-                      <div className="welcome-eyebrow">Evaluación Inicial · EXANI-II {getUaaCycleContext().shortCycleTag}</div>
-                      <h1 className="welcome-h1">Descubre tu puntaje real EXANI-II en 10 minutos</h1>
+                      <figure className="neftali-fig" style={{ maxWidth: '320px' }}>
+                        <img
+                          src="/ilustraciones/libro-pregunta.png"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          alt="Libro abierto y nube de pensamiento: examina tus ideas antes de responder"
+                          loading="lazy"
+                        />
+                      </figure>
+                      <div className="welcome-eyebrow">NEFTALÍ · Evaluación inicial · EXANI-II {getUaaCycleContext().shortCycleTag}</div>
+                      <h1 className="welcome-h1">Descubre tu puntaje estimado EXANI-II en 10 minutos</h1>
                       <p className="welcome-desc">
-                        Evaluación guiada con el método de Miguel López. Resuelve 30 reactivos clave paso a paso y combina tu reporte con nuestro simulador de 50 reactivos y cuadernos descargables.
+                        Evaluación guiada con el método de Miguel Neftalí López. Resuelve 30 reactivos clave paso a paso y combina tu reporte con nuestro simulador de 50 reactivos y cuadernos descargables.
                       </p>
 
                       <div className="welcome-cta-row">
@@ -1326,6 +1466,13 @@ const App = () => {
                           Ver Cuadernos Descargables
                         </button>
                       </div>
+                      <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '14px' }}>
+                        Al comenzar aceptas el{' '}
+                        <a href="/aviso-de-privacidad.html" target="_blank" rel="noreferrer">
+                          aviso de privacidad
+                        </a>
+                        . Tus respuestas se guardan solo en tu dispositivo. Si tienes menos de 18 años, haz el diagnóstico con el conocimiento de tu padre, madre o tutor.
+                      </p>
                     </section>
                   ) : (
                     <>

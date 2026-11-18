@@ -14,7 +14,7 @@ const renderInlineMarkdown = (text: string, isUser: boolean): React.ReactNode[] 
           key={index}
           style={{
             backgroundColor: isUser ? 'rgba(22, 35, 54, 0.08)' : '#F5EFE2',
-            color: isUser ? '#162336' : '#7C4F10',
+            color: isUser ? '#22312a' : '#a34e27',
             border: '1px solid rgba(22, 35, 54, 0.12)',
             padding: '1px 6px',
             borderRadius: '5px',
