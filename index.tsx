@@ -138,7 +138,7 @@ const MessageBubble: React.FC<{
             )}
             {isReport && (
               <a
-                href="https://wa.me/524494550463?text=Hola%20Miguel%2C%20termin%C3%A9%20mi%20diagn%C3%B3stico%20EXANI-II%20y%20quiero%20informaci%C3%B3n%20de%20la%20Mentor%C3%ADa%20EXANI-UAA"
+                href="https://wa.me/524494959259?text=Hola%20Miguel%2C%20termin%C3%A9%20mi%20diagn%C3%B3stico%20EXANI-II%20y%20quiero%20informaci%C3%B3n%20de%20la%20Mentor%C3%ADa%20EXANI-UAA"
                 target="_blank"
                 rel="noreferrer"
                 className="msg-action-btn is-primary"
@@ -233,7 +233,7 @@ const HelpModal: React.FC<{
           </li>
           <li style={{ marginBottom: '6px' }}>
             <strong>Contacto:</strong> ¿Dudas o acompañamiento 1 a 1? Escríbele a Miguel por{' '}
-            <a href="https://wa.me/524494550463" target="_blank" rel="noreferrer">
+            <a href="https://wa.me/524494959259" target="_blank" rel="noreferrer">
               WhatsApp
             </a>{' '}
             (Mentoría EXANI-UAA: 4 sesiones, 10 lugares, $1,600 MXN).
@@ -662,7 +662,7 @@ const LandingView: React.FC<{
             Agenda tu sesión · $400
             <ArrowRight size={14} />
           </a>
-          <a className="btn btn-secondary" href="https://wa.me/524494550463" target="_blank" rel="noreferrer">
+          <a className="btn btn-secondary" href="https://wa.me/524494959259" target="_blank" rel="noreferrer">
             <MessageCircle size={15} />
             Pregunta por WhatsApp
           </a>
@@ -686,7 +686,7 @@ const LandingView: React.FC<{
           Aviso de privacidad
         </a>{' '}
         ·{' '}
-        <a href="https://wa.me/524494550463" target="_blank" rel="noreferrer">
+        <a href="https://wa.me/524494959259" target="_blank" rel="noreferrer">
           WhatsApp
         </a>{' '}
         ·{' '}
@@ -1336,14 +1336,14 @@ const App = () => {
 
                 <a
                   className="btn btn-gold"
-                  href="https://wa.me/524494550463?text=Hola%20Miguel%2C%20quiero%20informaci%C3%B3n%20de%20la%20Mentor%C3%ADa%20EXANI-UAA"
+                  href="https://wa.me/524494959259?text=Hola%20Miguel%2C%20quiero%20informaci%C3%B3n%20de%20la%20Mentor%C3%ADa%20EXANI-UAA"
                   target="_blank"
                   rel="noreferrer"
                 >
                   <MessageCircle size={15} />
                   Mentoría EXANI-UAA · 4 sesiones · $1,600
                 </a>
-                <a className="btn btn-secondary" href="https://wa.me/524494550463" target="_blank" rel="noreferrer">
+                <a className="btn btn-secondary" href="https://wa.me/524494959259" target="_blank" rel="noreferrer">
                   <MessageCircle size={15} />
                   Escríbeme por WhatsApp
                 </a>

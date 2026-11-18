@@ -800,7 +800,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
           loading="lazy"
         />
         <span>
-          <strong>Checkout oficial con Stripe + Descarga Directa:</strong> Paga de forma encriptada con tarjeta, Apple Pay o Google Pay; al confirmar regresas automáticamente aquí para descargar tu PDF y Audio WAV al instante. Lee nuestro <a href="/aviso-de-privacidad.html" target="_blank" rel="noreferrer">aviso de privacidad</a> y, si quieres acompañamiento 1 a 1, la Mentoría EXANI-UAA (4 sesiones, 10 lugares, $1,600 MXN) se acuerda por <a href="https://wa.me/524494550463" target="_blank" rel="noreferrer">WhatsApp</a>.
+          <strong>Checkout oficial con Stripe + Descarga Directa:</strong> Paga de forma encriptada con tarjeta, Apple Pay o Google Pay; al confirmar regresas automáticamente aquí para descargar tu PDF y Audio WAV al instante. Lee nuestro <a href="/aviso-de-privacidad.html" target="_blank" rel="noreferrer">aviso de privacidad</a> y, si quieres acompañamiento 1 a 1, la Mentoría EXANI-UAA (4 sesiones, 10 lugares, $1,600 MXN) se acuerda por <a href="https://wa.me/524494959259" target="_blank" rel="noreferrer">WhatsApp</a>.
         </span>
       </div>
 

@@ -60,9 +60,9 @@ FLUJOS EXACTOS (sigue este orden estricto, sin saltar ni agregar extras):
        - Incluye neuroaprendizaje: "Técnica para llegar con calma: usa el entrenador de Respiración 4-7-8 de la pestaña Herramientas durante 90 segundos antes de tus simulacros."
        - Pensamiento crítico: "Parafrasea los enunciados con tus propias palabras y verifica cada argumento con evidencia antes de descartar opciones."
      - **5. Recomendación Urgente**: "Con tu perfil, [nombre] puede subir su puntaje en 4 semanas con un plan estructurado."
-     - **6. SIGUIENTE PASO**: "Para seguir tienes dos caminos: descarga inmediata en la pestaña 'Cuadernos' (Banco de 50 Reactivos, Kit de Neuro-Aprendizaje o Guía para llegar con calma al examen, con pago por Stripe) o, si quieres acompañamiento 1 a 1, la Mentoría EXANI-UAA de Miguel (4 sesiones, 10 lugares, $1,600 MXN): escríbele por WhatsApp (https://wa.me/524494550463) y aparta tu lugar. ¡Da el siguiente paso hacia [carrera] en ${cycle.shortCycleTag}!" 
+     - **6. SIGUIENTE PASO**: "Para seguir tienes dos caminos: descarga inmediata en la pestaña 'Cuadernos' (Banco de 50 Reactivos, Kit de Neuro-Aprendizaje o Guía para llegar con calma al examen, con pago por Stripe) o, si quieres acompañamiento 1 a 1, la Mentoría EXANI-UAA de Miguel (4 sesiones, 10 lugares, $1,600 MXN): escríbele por WhatsApp (https://wa.me/524494959259) y aparta tu lugar. ¡Da el siguiente paso hacia [carrera] en ${cycle.shortCycleTag}!" 
 
-Mantén todo confidencial, motivador y sin ventas agresivas hasta el cierre final. Si el usuario abandona, ofrece reanudar. Si el aspirante pide hablar con Miguel o necesita acompañamiento personal, ofrécele escribir por WhatsApp (https://wa.me/524494550463) y cuéntale de la Mentoría EXANI-UAA (4 sesiones, 10 lugares, $1,600 MXN). Responde en español claro y cercano de Aguascalientes.
+Mantén todo confidencial, motivador y sin ventas agresivas hasta el cierre final. Si el usuario abandona, ofrece reanudar. Si el aspirante pide hablar con Miguel o necesita acompañamiento personal, ofrécele escribir por WhatsApp (https://wa.me/524494959259) y cuéntale de la Mentoría EXANI-UAA (4 sesiones, 10 lugares, $1,600 MXN). Responde en español claro y cercano de Aguascalientes.
 `.trim();
 };
 
