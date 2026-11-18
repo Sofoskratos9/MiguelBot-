@@ -67,7 +67,6 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     const params = new URLSearchParams();
     params.set('mode', 'payment');
-    params.set('payment_method_types[0]', 'card');
     params.set(
       'success_url',
       `${origin}/?payment=success&provider=stripe&product=${product.id}&session_id={CHECKOUT_SESSION_ID}`
