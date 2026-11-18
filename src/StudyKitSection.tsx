@@ -52,7 +52,7 @@ const DEFAULT_PRODUCTS: ProductSpec[] = [
     compareAtMxn: 299,
     ctaLabel: 'Pagar con Stripe y Descargar',
     deliverables: [
-      'PDF Cuaderno Visual + Plantillas Imprimibles (8 págs.)',
+      'PDF Cuaderno Visual + 4 Plantillas + Casos Resueltos (14 págs.)',
       'Audio Binaural 40 Hz Enfoque Profundo (.wav)',
       'Reproductor Binaural Integrado Sin Límite',
     ],
@@ -62,13 +62,13 @@ const DEFAULT_PRODUCTS: ProductSpec[] = [
     name: 'Banco de 50 Reactivos EXANI-II',
     badge: 'Best Seller · Edición 2026',
     tagline:
-      '50 preguntas originales estilo CENEVAL 2026 en formato examen imprimible + solucionario completo paso a paso + simulador interactivo.',
+      '50 preguntas originales estilo CENEVAL 2026 en formato examen imprimible + hoja óptica de burbujas + formulario maestro + solucionario completo.',
     priceMxn: 149,
     compareAtMxn: 499,
     ctaLabel: 'Comprar Pack con Stripe',
     featured: true,
     deliverables: [
-      'PDF Examen 50 Reactivos + Tabla Clave + Solucionario (20 págs.)',
+      'PDF Examen 50 Reactivos + Hoja Burbujas + Formulario + Solucionario (25 págs.)',
       'Simulador Interactivo Completo (50 Preguntas por Área)',
       'Diagnóstico Personal Integrado en tu Cuadernillo',
     ],
@@ -78,13 +78,13 @@ const DEFAULT_PRODUCTS: ProductSpec[] = [
     name: 'Protocolo Anti-Ansiedad NSDR',
     badge: 'Audio WAV + Guía PDF',
     tagline:
-      'Audio estéreo NSDR (Alpha 10 Hz → Theta 6 Hz) y guía clínica visual de regulación vagal 4-7-8 / 4-4-4-4 y checklist pre-examen UAA.',
+      'Audio estéreo NSDR (Alpha 10 Hz → Theta 6 Hz) y manual visual con curva Yerkes-Dodson, 4 rescates en aula y tarjeta de bolsillo 60s.',
     priceMxn: 79,
     compareAtMxn: 199,
     ctaLabel: 'Obtener Audio y Guía',
     deliverables: [
       'Audio Estéreo NSDR Alpha → Theta (.wav)',
-      'PDF Guía Clínica Pre-Examen + Diagramas (5 págs.)',
+      'PDF Manual Clínico + Diagramas + Tarjeta de Bolsillo (10 págs.)',
       'Reproductor NSDR Guiado 10 Minutos en Navegador',
     ],
   },
@@ -621,7 +621,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                             onClick={() => triggerProductDeliverable('neuro-kit', 'pdf')}
                           >
                             <Download size={15} />
-                            Descargar Cuaderno PDF (8 págs.)
+                            Descargar Cuaderno PDF (14 págs.)
                           </button>
                           <div className="pack-dual-row">
                             <button
@@ -661,7 +661,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                             onClick={() => triggerProductDeliverable('reactivos-pack', 'pdf')}
                           >
                             <Download size={15} />
-                            Descargar Pack 50 Reactivos (20 págs.)
+                            Descargar Pack 50 Reactivos (25 págs.)
                           </button>
                           <button
                             type="button"
@@ -695,7 +695,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                               onClick={() => triggerProductDeliverable('nsdr-protocol', 'pdf')}
                             >
                               <FileText size={14} />
-                              Guía PDF (5 págs.)
+                              Guía PDF (10 págs.)
                             </button>
                             <button
                               type="button"
