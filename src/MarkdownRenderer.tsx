@@ -13,12 +13,13 @@ const renderInlineMarkdown = (text: string, isUser: boolean): React.ReactNode[] 
         <code
           key={index}
           style={{
-            backgroundColor: isUser ? 'rgba(6, 9, 19, 0.28)' : 'rgba(212, 175, 55, 0.14)',
-            color: isUser ? '#fef3c7' : '#f3d98b',
+            backgroundColor: isUser ? 'rgba(22, 35, 54, 0.08)' : '#F5EFE2',
+            color: isUser ? '#162336' : '#7C4F10',
+            border: '1px solid rgba(22, 35, 54, 0.12)',
             padding: '1px 6px',
             borderRadius: '5px',
             fontSize: '0.88em',
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+            fontFamily: 'var(--font-mono)',
           }}
         >
           {segment.slice(1, -1)}
@@ -47,7 +48,7 @@ export const MarkdownRenderer: React.FC<{ text: string; isUser: boolean }> = ({ 
             <hr
               key={i}
               className="md-hr"
-              style={isUser ? { borderTopColor: 'rgba(255,255,255,0.25)' } : undefined}
+              style={isUser ? { borderTopColor: 'rgba(22, 35, 54, 0.16)' } : undefined}
             />
           );
         }
@@ -71,9 +72,9 @@ export const MarkdownRenderer: React.FC<{ text: string; isUser: boolean }> = ({ 
               style={
                 isUser
                   ? {
-                      background: 'rgba(255,255,255,0.12)',
-                      borderLeftColor: 'rgba(255,255,255,0.6)',
-                      color: '#f8fafc',
+                      background: 'rgba(255, 255, 255, 0.55)',
+                      borderLeftColor: 'var(--accent-brass)',
+                      color: 'var(--text-primary)',
                     }
                   : undefined
               }

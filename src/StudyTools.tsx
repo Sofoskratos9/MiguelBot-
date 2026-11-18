@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   Activity,
+  ArrowRight,
   BookOpenCheck,
   Brain,
   Calculator,
   CheckCircle2,
   Compass,
+  GraduationCap,
   Pause,
   Play,
   RotateCcw,
-  Sparkles,
 } from 'lucide-react';
 import { ExaniSimulator } from './ExaniSimulator';
 
@@ -203,10 +204,10 @@ export const StudyTools: React.FC<StudyToolsProps> = ({ hasReactivosPack = false
   return (
     <div className="tools-viewport">
       <div className="tools-header-block">
-        <div className="section-eyebrow">Estrategia Basada en Evidencia · EXANI-II UAA</div>
-        <h1 className="tools-h1">Laboratorio de Alto Rendimiento</h1>
+        <div className="section-eyebrow">Práctica Guiada y Cálculo Oficial · EXANI-II UAA</div>
+        <h1 className="tools-h1">Calculadora, Simulador y Hábitos de Examen</h1>
         <p className="tools-sub">
-          Calcula tu puntaje real en escala CENEVAL, practica con reactivos reales, regula tu respuesta al estrés y valida tu perfil vocacional UAA.
+          Proyecta tu puntaje en escala CENEVAL según tu carrera objetivo, entrena con reactivos reales comentados, regula la respiración antes del examen y revisa tu perfil RIASEC.
         </p>
       </div>
 
@@ -488,7 +489,7 @@ export const StudyTools: React.FC<StudyToolsProps> = ({ hasReactivosPack = false
           {selectedRiasecCodes.length > 0 && (
             <div className="riasec-result">
               <div className="riasec-result-title">
-                <Sparkles size={14} />
+                <GraduationCap size={14} />
                 Carreras UAA sugeridas por tu perfil ({selectedRiasecCodes.join(' · ')}):
               </div>
               <div className="riasec-matches">
@@ -504,15 +505,15 @@ export const StudyTools: React.FC<StudyToolsProps> = ({ hasReactivosPack = false
 
         <section className="tool-card" aria-labelledby="wellness-heading">
           <div className="tool-card-head">
-            <div className="tool-icon-badge is-violet">
+            <div className="tool-icon-badge is-slate">
               <Brain size={18} />
             </div>
             <div>
               <h2 id="wellness-heading" className="tool-card-title">
-                Protocolos Cognitivos Conética Educativa™
+                Protocolos Cognitivos de Estudio
               </h2>
               <p className="tool-card-desc">
-                Principios prácticos de rendimiento aplicados en nuestros packs descargables.
+                Principios prácticos de rendimiento aplicados en nuestros cuadernos descargables.
               </p>
             </div>
           </div>
@@ -532,7 +533,8 @@ export const StudyTools: React.FC<StudyToolsProps> = ({ hasReactivosPack = false
           {onOpenPacks && (
             <div style={{ marginTop: '14px' }}>
               <button type="button" className="btn btn-gold" onClick={onOpenPacks} style={{ width: '100%' }}>
-                Ver los 3 Packs Descargables (PDF + Audio WAV)
+                Ver los 3 Cuadernos Descargables (PDF + WAV)
+                <ArrowRight size={15} />
               </button>
             </div>
           )}

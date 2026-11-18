@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2, Filter, Lock, RotateCcw, Sparkles, Trophy, XCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Filter, Lock, RotateCcw, Trophy, XCircle } from 'lucide-react';
 import { getUaaCycleContext } from '../shared/examCycle';
 import { EXANI_50_BANK, FREE_PREVIEW_QUESTIONS, type ExaniArea, type ExaniQuestion } from './exaniBank';
 
@@ -221,8 +221,8 @@ export const ExaniSimulator: React.FC<ExaniSimulatorProps> = ({ isUnlocked, onUn
             </span>
           </div>
           <button type="button" className="btn btn-gold btn-sm" onClick={onUnlockRequest}>
-            <Sparkles size={14} />
             Desbloquear 50 Reactivos ($149 MXN)
+            <ArrowRight size={14} />
           </button>
         </div>
       )}

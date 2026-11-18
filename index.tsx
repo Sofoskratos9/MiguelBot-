@@ -20,14 +20,15 @@ import {
   Send,
   Shield,
   ShieldCheck,
-  Sparkles,
   Trash2,
   X,
+  XCircle,
 } from 'lucide-react';
 import './index.css';
 import { MarkdownRenderer } from './src/MarkdownRenderer';
 import { StudyTools } from './src/StudyTools';
 import { StudyKitSection, TOKENS_STORAGE_KEY, type ProductId } from './src/StudyKitSection';
+import { FREE_PREVIEW_QUESTIONS } from './src/exaniBank';
 import { buildExaniSystemInstruction } from './api/_systemPrompt';
 import { getUaaCycleContext } from './shared/examCycle';
 import { EXAM_SOURCES_SNAPSHOT } from './shared/examSources';
@@ -221,14 +222,14 @@ const HelpModal: React.FC<{
           ) : (
             <div
               style={{
-                backgroundColor: 'rgba(220, 38, 38, 0.14)',
-                border: '1px solid rgba(248, 113, 113, 0.35)',
+                backgroundColor: 'var(--red-wash)',
+                border: '1px solid #e7b5ac',
                 borderRadius: '10px',
                 padding: '12px',
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '13px', color: '#fca5a5', marginBottom: '10px', fontWeight: 600 }}>
+              <div style={{ fontSize: '13px', color: '#8f2d1e', marginBottom: '10px', fontWeight: 600 }}>
                 ¿Borrar el avance del diagnóstico guardado en este navegador?
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -243,7 +244,7 @@ const HelpModal: React.FC<{
                 <button
                   type="button"
                   className="btn"
-                  style={{ flex: 1, padding: '8px', background: '#dc2626', color: '#fff' }}
+                  style={{ flex: 1, padding: '8px', background: '#b24432', color: '#fff' }}
                   onClick={onReset}
                 >
                   Sí, borrar
@@ -264,85 +265,244 @@ const HelpModal: React.FC<{
   );
 };
 
-// --- Landing Showcase View (Obsidian + Champagne Gold) ---
+// --- Editorial Landing Showcase View (Papel Marfil + Tinta UAA + Latón) ---
 
 const LandingView: React.FC<{
   onStartDiagnostic: () => void;
   onOpenTools: () => void;
-  onOpenPacks: () => void;
+  onOpenPacks: (productId?: ProductId) => void;
 }> = ({ onStartDiagnostic, onOpenTools, onOpenPacks }) => {
   const cycle = getUaaCycleContext();
+  const [sampleTab, setSampleTab] = useState<'lectura' | 'mate'>('lectura');
+  const [pickedOption, setPickedOption] = useState<number | null>(null);
+
+  const sampleQuestion = sampleTab === 'lectura' ? FREE_PREVIEW_QUESTIONS[0] : FREE_PREVIEW_QUESTIONS[1];
+  const letters = ['A', 'B', 'C', 'D'];
+
+  const handleSwitchSample = (nextTab: 'lectura' | 'mate') => {
+    setSampleTab(nextTab);
+    setPickedOption(null);
+  };
+
   return (
     <div className="landing-viewport">
-      {/* Hero Section */}
-      <section className="hero-section">
-        <div className="hero-pill">
-          <Sparkles size={13} />
-          <span>Estrategia Académica &amp; Neuro-Aprendizaje · {cycle.editionLabel}</span>
+      {/* Asymmetric Editorial Hero + Live Specimen Card */}
+      <section className="editorial-hero" aria-label="Introducción y prueba interactiva">
+        <div>
+          <div className="hero-dateline">
+            Ciclo {cycle.shortCycleTag} · Método Miguel López
+          </div>
+
+          <h1 className="hero-title">
+            Prepara tu EXANI-II con <em>criterio real</em>, no memorizando guías a ciegas.
+          </h1>
+
+          <p className="hero-desc">
+            Detecta en 10 minutos qué áreas suman o restan puntos para tu carrera ({cycle.uaaPhaseLabel}), practica con reactivos comentados y descarga cuadernos imprimibles con audio para estudiar sin distracciones.
+          </p>
+
+          <div className="hero-actions">
+            <button type="button" className="btn btn-gold hero-cta" onClick={onStartDiagnostic}>
+              Comenzar Diagnóstico Gratuito
+              <ArrowRight size={16} />
+            </button>
+            <button type="button" className="btn btn-secondary hero-cta" onClick={onOpenTools}>
+              <Calculator size={16} />
+              Calculadora y Simulador
+            </button>
+          </div>
+
+          <div className="hero-subactions">
+            <button
+              type="button"
+              className="btn-link-inline"
+              onClick={async () => {
+                const { generateSampleKitPdf } = await import('./src/pdfKitGenerator');
+                generateSampleKitPdf();
+              }}
+            >
+              <Download size={14} />
+              Descargar muestra gratis (PDF, 5 págs.)
+            </button>
+          </div>
+
+          <div className="hero-proof-line">
+            <span className="hero-proof-item">
+              <CheckCircle2 size={14} />
+              <strong>30 reactivos</strong> por área
+            </span>
+            <span className="hero-proof-item">
+              <CheckCircle2 size={14} />
+              <strong>700–1300 pts</strong> escala CENEVAL
+            </span>
+            <span className="hero-proof-item">
+              <CheckCircle2 size={14} />
+              <strong>Guardado local</strong> en tu dispositivo
+            </span>
+          </div>
         </div>
 
-        <h1 className="hero-title">
-          Domina el EXANI-II con <span className="text-gold">precisión estratégica</span> y cero improvisación
-        </h1>
+        {/* Interactive Live Specimen Card */}
+        <div className="hero-specimen-wrap">
+          <div className="hero-specimen-card" role="region" aria-label="Prueba rápida de reactivo EXANI-II">
+            <div className="specimen-top">
+              <span className="specimen-label">Prueba 1 reactivo ahora</span>
+              <div className="specimen-switch" role="tablist" aria-label="Área de muestra">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={sampleTab === 'lectura'}
+                  className={`specimen-switch-btn ${sampleTab === 'lectura' ? 'is-active' : ''}`}
+                  onClick={() => handleSwitchSample('lectura')}
+                >
+                  Lectura
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={sampleTab === 'mate'}
+                  className={`specimen-switch-btn ${sampleTab === 'mate' ? 'is-active' : ''}`}
+                  onClick={() => handleSwitchSample('mate')}
+                >
+                  Matemático
+                </button>
+              </div>
+            </div>
 
-        <p className="hero-desc">
-          Evalúa tu nivel real en 10 minutos con nuestro diagnóstico adaptativo ({cycle.uaaPhaseLabel}), entrena con 50 reactivos comentados y descarga herramientas actualizadas para maximizar tu puntaje CENEVAL.
-        </p>
+            <p className="specimen-q">{sampleQuestion.question}</p>
 
-        <div className="hero-actions">
-          <button type="button" className="btn btn-gold hero-cta" onClick={onStartDiagnostic}>
-            <Sparkles size={16} />
-            Comenzar Diagnóstico Gratuito
-          </button>
-          <button type="button" className="btn btn-secondary hero-cta" onClick={onOpenPacks}>
-            <Download size={16} />
-            Ver Packs Descargables
-          </button>
-          <button type="button" className="btn btn-secondary hero-cta" onClick={onOpenTools}>
-            <Calculator size={16} />
-            Calculadora &amp; Simulador
-          </button>
-        </div>
+            <div className="sim-options">
+              {sampleQuestion.options.map((opt, idx) => {
+                const isAnswered = pickedOption !== null;
+                const isPicked = pickedOption === idx;
+                const isCorrect = idx === sampleQuestion.correctIndex;
+                let cls = '';
+                if (isAnswered) {
+                  if (isCorrect) cls = 'is-correct';
+                  else if (isPicked) cls = 'is-wrong';
+                }
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`practice-opt-btn ${cls}`}
+                    onClick={() => setPickedOption(idx)}
+                  >
+                    <span className="sim-opt-letter">{letters[idx]}</span>
+                    <span>{opt}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-        <div className="hero-metrics">
-          <div className="metric-card">
-            <strong>30 Reactivos</strong>
-            <span>Diagnóstico personalizado por área {cycle.shortCycleTag}</span>
-          </div>
-          <div className="metric-card">
-            <strong>50 Preguntas + WAV</strong>
-            <span>Descarga directa tras pagar con Stripe</span>
-          </div>
-          <div className="metric-card">
-            <strong>700 – 1300 pts</strong>
-            <span>Proyección real en escala CENEVAL</span>
+            {pickedOption !== null && (
+              <div
+                className={`practice-feedback ${
+                  pickedOption === sampleQuestion.correctIndex ? 'is-ok' : 'is-err'
+                }`}
+              >
+                {pickedOption === sampleQuestion.correctIndex ? (
+                  <CheckCircle2 size={15} style={{ flexShrink: 0, marginTop: '2px' }} />
+                ) : (
+                  <XCircle size={15} style={{ flexShrink: 0, marginTop: '2px' }} />
+                )}
+                <span>
+                  <strong>
+                    {pickedOption === sampleQuestion.correctIndex
+                      ? 'Correcto.'
+                      : `La correcta es ${letters[sampleQuestion.correctIndex]}.`}
+                  </strong>{' '}
+                  {sampleQuestion.explanation}
+                </span>
+              </div>
+            )}
+
+            <div className="specimen-footer-row">
+              <span>{sampleQuestion.area} · Nivel {sampleQuestion.difficulty}</span>
+              <button type="button" className="btn-link-inline" onClick={onOpenTools}>
+                Probar los 4 reactivos gratis
+                <ArrowRight size={13} />
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Preview of the 3 High-Performance Products (matches screenshot) */}
-      <section className="landing-packs-preview" aria-labelledby="landing-packs-heading">
-        <div className="packs-hero-header" style={{ marginBottom: '26px' }}>
-          <h2 id="landing-packs-heading" className="packs-h1" style={{ fontSize: 'clamp(28px, 4vw, 38px)' }}>
-            Herramientas de Alto Rendimiento
-          </h2>
-          <p className="packs-sub">
-            Tecnología educativa de bajo costo y alto impacto. Paga con Stripe y descarga tus archivos directo en pantalla.
+      {/* Interactive 3-Chapter Study Flow */}
+      <section className="journey-strip" aria-label="Cómo usar la plataforma paso a paso">
+        <button type="button" className="journey-chapter" onClick={onStartDiagnostic}>
+          <span className="journey-num">PASO 01 · 10 MINUTOS</span>
+          <h2 className="journey-title">Diagnóstico adaptativo</h2>
+          <p className="journey-copy">
+            Responde 4 datos sobre tu carrera en la UAA y resuelve 30 reactivos por bloques con semáforo de aciertos y plan semanal.
           </p>
+          <span className="journey-cta">
+            Abrir diagnóstico
+            <ArrowRight size={14} />
+          </span>
+        </button>
+
+        <button type="button" className="journey-chapter" onClick={onOpenTools}>
+          <span className="journey-num">PASO 02 · PRÁCTICA LIBRE</span>
+          <h2 className="journey-title">Calculadora y simulador</h2>
+          <p className="journey-copy">
+            Ajusta tus aciertos frente al puntaje de Medicina, Estomatología o Ingenierías, entrena respiración 4-7-8 y orientador RIASEC.
+          </p>
+          <span className="journey-cta">
+            Explorar herramientas
+            <ArrowRight size={14} />
+          </span>
+        </button>
+
+        <button type="button" className="journey-chapter" onClick={() => onOpenPacks()}>
+          <span className="journey-num">PASO 03 · MATERIAL DE MESA</span>
+          <h2 className="journey-title">Cuadernos PDF y audio .wav</h2>
+          <p className="journey-copy">
+            Descarga guías imprimibles de 10 a 25 páginas con solucionarios comentados, hoja de burbujas y audio binaural sin suscripciones.
+          </p>
+          <span className="journey-cta">
+            Ver cuadernos y precios
+            <ArrowRight size={14} />
+          </span>
+        </button>
+      </section>
+
+      {/* Featured Editorial Folio Showcase of the 3 Packs */}
+      <section className="landing-packs-preview" aria-labelledby="landing-packs-heading">
+        <div className="section-header-editorial">
+          <div>
+            <div className="section-eyebrow">Materiales de Estudio · Edición {cycle.targetAdmissionYear}</div>
+            <h2 id="landing-packs-heading" className="packs-h1" style={{ fontSize: 'clamp(26px, 3.4vw, 36px)', marginBottom: 0 }}>
+              Cuadernos y Guías de Descarga Directa
+            </h2>
+          </div>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenPacks()}>
+            Ir a tienda y muestras de audio
+            <ArrowRight size={14} />
+          </button>
         </div>
 
         <div className="packs-grid">
-          <article className="pack-card is-neuro" onClick={onOpenPacks} style={{ cursor: 'pointer' }}>
-            <div className="pack-visual-band">
-              <span className="pack-badge">PDF + Audio WAV</span>
-              <div className="pack-icon-wrap">
-                <Brain size={44} strokeWidth={1.6} />
+          <article className="pack-card is-neuro" onClick={() => onOpenPacks('neuro-kit')} style={{ cursor: 'pointer' }}>
+            <div className="pack-folio-band">
+              <div className="pack-folio-top">
+                <span className="pack-catalog-code">CUADERNO 01</span>
+                <span className="pack-badge">PDF + Audio WAV</span>
+              </div>
+              <div className="pack-folio-spec">
+                <div className="pack-folio-meta">
+                  14 páginas imprimibles
+                  <span>Ciclos 90/20 + Audio 40 Hz</span>
+                </div>
+                <div className="pack-folio-emblem" aria-hidden="true">
+                  <Brain size={20} strokeWidth={1.7} />
+                </div>
               </div>
             </div>
             <div className="pack-body">
               <h3 className="pack-title">Kit de Neuro-Aprendizaje</h3>
               <p className="pack-tagline">
-                Plantillas de estudio basadas en ciclos ultradianos (90/20), método Feynman y audio binaural 40 Hz para enfoque profundo.
+                Plantillas listas para imprimir basadas en bloques ultradianos (90/20), método Feynman paso a paso y pista binaural de enfoque.
               </p>
               <div className="pack-footer">
                 <div className="pack-price-line">
@@ -350,24 +510,33 @@ const LandingView: React.FC<{
                   <span className="pack-compare">$299</span>
                 </div>
                 <button type="button" className="btn btn-obsidian" style={{ width: '100%' }}>
-                  Comprar y Descargar
+                  Ver detalle y muestras
                   <ArrowRight size={14} />
                 </button>
               </div>
             </div>
           </article>
 
-          <article className="pack-card is-featured" onClick={onOpenPacks} style={{ cursor: 'pointer' }}>
-            <div className="pack-visual-band">
-              <span className="pack-badge">Best Seller · Edición {cycle.targetAdmissionYear}</span>
-              <div className="pack-icon-wrap">
-                <FileText size={44} strokeWidth={1.6} />
+          <article className="pack-card is-featured" onClick={() => onOpenPacks('reactivos-pack')} style={{ cursor: 'pointer' }}>
+            <div className="pack-folio-band">
+              <div className="pack-folio-top">
+                <span className="pack-catalog-code">CUADERNO 02</span>
+                <span className="pack-badge">Más elegido · {cycle.targetAdmissionYear}</span>
+              </div>
+              <div className="pack-folio-spec">
+                <div className="pack-folio-meta">
+                  25 páginas + Simulador
+                  <span>50 reactivos + Hoja de burbujas</span>
+                </div>
+                <div className="pack-folio-emblem" aria-hidden="true">
+                  <FileText size={20} strokeWidth={1.7} />
+                </div>
               </div>
             </div>
             <div className="pack-body">
               <h3 className="pack-title">Banco de 50 Reactivos EXANI-II</h3>
               <p className="pack-tagline">
-                50 preguntas originales basadas en el temario oficial CENEVAL {cycle.targetAdmissionYear} con simulacro interactivo y soluciones comentadas.
+                Examen simulacro completo alineado al temario CENEVAL {cycle.targetAdmissionYear}, hoja óptica imprimible, formulario y soluciones explicadas.
               </p>
               <div className="pack-footer">
                 <div className="pack-price-line">
@@ -375,24 +544,33 @@ const LandingView: React.FC<{
                   <span className="pack-compare">$499</span>
                 </div>
                 <button type="button" className="btn btn-gold" style={{ width: '100%' }}>
-                  Comprar y Descargar Pack
+                  Ver pack y simulador
                   <ArrowRight size={14} />
                 </button>
               </div>
             </div>
           </article>
 
-          <article className="pack-card is-nsdr" onClick={onOpenPacks} style={{ cursor: 'pointer' }}>
-            <div className="pack-visual-band">
-              <span className="pack-badge">Audio + Guía PDF</span>
-              <div className="pack-icon-wrap">
-                <Shield size={44} strokeWidth={1.6} />
+          <article className="pack-card is-nsdr" onClick={() => onOpenPacks('nsdr-protocol')} style={{ cursor: 'pointer' }}>
+            <div className="pack-folio-band">
+              <div className="pack-folio-top">
+                <span className="pack-catalog-code">CUADERNO 03</span>
+                <span className="pack-badge">Audio + Guía PDF</span>
+              </div>
+              <div className="pack-folio-spec">
+                <div className="pack-folio-meta">
+                  10 páginas + Audio 10 min
+                  <span>Ondas Alpha → Theta + Tarjeta</span>
+                </div>
+                <div className="pack-folio-emblem" aria-hidden="true">
+                  <Shield size={20} strokeWidth={1.7} />
+                </div>
               </div>
             </div>
             <div className="pack-body">
               <h3 className="pack-title">Protocolo Anti-Ansiedad NSDR</h3>
               <p className="pack-tagline">
-                Sesión sonora de 10 min basada en NSDR (Alpha → Theta) y respiración táctica para reducir estrés antes del examen.
+                Sesión sonora guiada para bajar pulsaciones antes del examen, junto con manual práctico y tarjeta de bolsillo de 60 segundos.
               </p>
               <div className="pack-footer">
                 <div className="pack-price-line">
@@ -400,7 +578,7 @@ const LandingView: React.FC<{
                   <span className="pack-compare">$199</span>
                 </div>
                 <button type="button" className="btn btn-obsidian" style={{ width: '100%' }}>
-                  Obtener Audio y Guía
+                  Escuchar muestra y abrir
                   <ArrowRight size={14} />
                 </button>
               </div>
@@ -421,6 +599,10 @@ const App = () => {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.has('payment')) return 'kit';
+    const tabParam = params.get('tab');
+    if (tabParam === 'landing' || tabParam === 'diagnostic' || tabParam === 'tools' || tabParam === 'kit') {
+      return tabParam;
+    }
     return loadStoredMessages().length > 0 ? 'diagnostic' : 'landing';
   });
   const [messages, setMessages] = useState<Message[]>(() => loadStoredMessages());
@@ -669,7 +851,7 @@ const App = () => {
         particleCount: 65,
         spread: 62,
         origin: { y: 0.72 },
-        colors: ['#d4af37', '#10b981', '#e5c158', '#60a5fa'],
+        colors: ['#b87e24', '#1b5e46', '#274b73', '#d4962a'],
       });
     }
   }, [isLoading, isStreaming, progress.stage]);
@@ -692,8 +874,13 @@ const App = () => {
     }
   }, [inputText]);
 
+  const navigateToTab = (tab: WorkspaceTab) => {
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const startDiagnostic = async () => {
-    setActiveTab('diagnostic');
+    navigateToTab('diagnostic');
     if (!hasEvaluatorAccess || isLoading) return;
     setHasStarted(true);
     await streamModelResponse([{ role: 'user', text: 'Hola' }], '__INIT__');
@@ -817,7 +1004,7 @@ const App = () => {
 
   return (
     <div className="platform-frame">
-      {/* Top Editorial Navbar matching screenshot */}
+      {/* Top Editorial Navbar */}
       <header className="top-navbar">
         <div className="top-navbar-inner">
           <div className="nav-brand-left">
@@ -835,13 +1022,13 @@ const App = () => {
             <button
               type="button"
               className="brand-logo-btn"
-              onClick={() => setActiveTab('landing')}
+              onClick={() => navigateToTab('landing')}
               aria-label="Ir al inicio"
             >
               <div className="monogram-box">M</div>
               <div className="monogram-text">
-                <span className="monogram-name">MIGUEL LÓPEZ</span>
-                <span className="monogram-role">ESTRATEGA EDUCATIVO</span>
+                <span className="monogram-name">Miguel López</span>
+                <span className="monogram-role">Preparación EXANI-II · UAA</span>
               </div>
             </button>
           </div>
@@ -850,31 +1037,31 @@ const App = () => {
             <button
               type="button"
               className={`top-nav-link ${activeTab === 'landing' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('landing')}
+              onClick={() => navigateToTab('landing')}
             >
               Inicio
             </button>
             <button
               type="button"
               className={`top-nav-link ${activeTab === 'diagnostic' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('diagnostic')}
+              onClick={() => navigateToTab('diagnostic')}
             >
               Diagnóstico
             </button>
             <button
               type="button"
               className={`top-nav-link ${activeTab === 'tools' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('tools')}
+              onClick={() => navigateToTab('tools')}
             >
               Herramientas
             </button>
             <button
               type="button"
               className={`top-nav-link ${activeTab === 'kit' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('kit')}
+              onClick={() => navigateToTab('kit')}
             >
-              Packs
-              {unlockedProducts.length > 0 && <span className="nav-dot-unlocked" title="Tienes packs desbloqueados" />}
+              Cuadernos
+              {unlockedProducts.length > 0 && <span className="nav-dot-unlocked" title="Tienes cuadernos desbloqueados" />}
             </button>
           </nav>
 
@@ -892,13 +1079,14 @@ const App = () => {
               type="button"
               className="btn btn-gold btn-nav-cta"
               onClick={() => {
-                setActiveTab('diagnostic');
+                navigateToTab('diagnostic');
                 if (!hasStarted && hasEvaluatorAccess && !isLoading) {
                   void startDiagnostic();
                 }
               }}
             >
-              Diagnóstico Gratuito
+              Iniciar diagnóstico
+              <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -908,16 +1096,16 @@ const App = () => {
       {activeTab === 'landing' ? (
         <LandingView
           onStartDiagnostic={() => {
-            setActiveTab('diagnostic');
+            navigateToTab('diagnostic');
             if (!hasStarted && hasEvaluatorAccess && !isLoading) {
               void startDiagnostic();
             }
           }}
-          onOpenTools={() => setActiveTab('tools')}
-          onOpenPacks={() => setActiveTab('kit')}
+          onOpenTools={() => navigateToTab('tools')}
+          onOpenPacks={() => navigateToTab('kit')}
         />
       ) : activeTab === 'tools' ? (
-        <StudyTools hasReactivosPack={hasReactivosPack} onOpenPacks={() => setActiveTab('kit')} />
+        <StudyTools hasReactivosPack={hasReactivosPack} onOpenPacks={() => navigateToTab('kit')} />
       ) : activeTab === 'kit' ? (
         <StudyKitSection
           latestReportText={progress.latestReportText}
@@ -968,7 +1156,7 @@ const App = () => {
                     <span>2. Cuestionario (30 reactivos)</span>
                   </div>
                   <div className={`stage-item ${progress.stage === 'completed' ? 'is-done' : ''}`}>
-                    <Sparkles size={15} />
+                    <Compass size={15} />
                     <span>3. Diagnóstico &amp; Plan UAA</span>
                   </div>
                 </div>
@@ -1020,12 +1208,12 @@ const App = () => {
                   type="button"
                   className="btn btn-gold"
                   onClick={() => {
-                    setActiveTab('kit');
+                    navigateToTab('kit');
                     setDrawerOpen(false);
                   }}
                 >
                   <FileText size={15} />
-                  Packs PDF &amp; Audio WAV
+                  Cuadernos PDF &amp; Audio WAV
                 </button>
 
                 {progress.latestReportText && (
@@ -1083,7 +1271,7 @@ const App = () => {
                         Activar Evaluador Diagnóstico
                       </h1>
                       <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-                        Herramientas, Simulador y Packs están activos sin configuración adicional.
+                        Herramientas, Simulador y Cuadernos están activos sin configuración adicional.
                       </p>
                     </div>
                   </div>
@@ -1109,7 +1297,7 @@ const App = () => {
                       <button type="submit" className="btn btn-gold" disabled={!manualKeyInput.trim()}>
                         Activar Evaluador
                       </button>
-                      <button type="button" className="btn btn-secondary" onClick={() => setActiveTab('tools')}>
+                      <button type="button" className="btn btn-secondary" onClick={() => navigateToTab('tools')}>
                         <Compass size={15} />
                         Ir a Herramientas
                       </button>
@@ -1122,20 +1310,20 @@ const App = () => {
                 <div className="messages-viewport">
                   {!hasStarted && messages.length === 0 ? (
                     <section className="welcome-card" aria-label="Bienvenida al diagnóstico">
-                      <div className="welcome-eyebrow">Orientador Académico · EXANI-II {getUaaCycleContext().shortCycleTag}</div>
+                      <div className="welcome-eyebrow">Evaluación Inicial · EXANI-II {getUaaCycleContext().shortCycleTag}</div>
                       <h1 className="welcome-h1">Descubre tu puntaje real EXANI-II en 10 minutos</h1>
                       <p className="welcome-desc">
-                        Evaluación guiada con el método de Miguel López. Resuelve 30 reactivos clave paso a paso y combina tu reporte con nuestro simulador de 50 reactivos y packs descargables.
+                        Evaluación guiada con el método de Miguel López. Resuelve 30 reactivos clave paso a paso y combina tu reporte con nuestro simulador de 50 reactivos y cuadernos descargables.
                       </p>
 
                       <div className="welcome-cta-row">
                         <button type="button" className="btn btn-gold" onClick={startDiagnostic} disabled={isLoading}>
-                          <Sparkles size={16} />
                           Comenzar Diagnóstico Gratis
+                          <ArrowRight size={16} />
                         </button>
-                        <button type="button" className="btn btn-secondary" onClick={() => setActiveTab('kit')}>
+                        <button type="button" className="btn btn-secondary" onClick={() => navigateToTab('kit')}>
                           <FileText size={15} />
-                          Ver Packs Descargables
+                          Ver Cuadernos Descargables
                         </button>
                       </div>
                     </section>

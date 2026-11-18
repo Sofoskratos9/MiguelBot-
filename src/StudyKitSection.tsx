@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
+  ArrowRight,
+  BookOpen,
   Brain,
   CheckCircle2,
   CreditCard,
@@ -12,7 +14,6 @@ import {
   Play,
   Shield,
   ShieldCheck,
-  Sparkles,
   Square,
   Unlock,
   Volume2,
@@ -329,7 +330,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                 particleCount: 70,
                 spread: 65,
                 origin: { y: 0.65 },
-                colors: ['#d4af37', '#10b981', '#e5c158'],
+                colors: ['#b87e24', '#1b5e46', '#274b73'],
               });
               window.history.replaceState({}, '', window.location.pathname);
               await triggerProductDeliverable(verifyData.productId, 'all');
@@ -472,21 +473,40 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
   const anyPaymentMethodEnabled = Boolean(config && (config.stripeEnabled || config.accessCodeEnabled));
   const recentProduct = recentPurchaseId ? products.find((p) => p.id === recentPurchaseId) : null;
 
-  const renderCardIcon = (id: ProductId) => {
-    if (id === 'neuro-kit') return <Brain size={44} strokeWidth={1.6} />;
-    if (id === 'reactivos-pack') return <FileText size={44} strokeWidth={1.6} />;
-    return <Shield size={44} strokeWidth={1.6} />;
+  const getFolioMeta = (id: ProductId) => {
+    if (id === 'neuro-kit') {
+      return {
+        code: 'CUADERNO 01',
+        pages: '14 páginas imprimibles',
+        format: 'Ciclos 90/20 + Audio 40 Hz (.wav)',
+        icon: <Brain size={20} strokeWidth={1.7} />,
+      };
+    }
+    if (id === 'reactivos-pack') {
+      return {
+        code: 'CUADERNO 02',
+        pages: '25 páginas + Simulador web',
+        format: '50 reactivos + Hoja óptica + Soluciones',
+        icon: <FileText size={20} strokeWidth={1.7} />,
+      };
+    }
+    return {
+      code: 'CUADERNO 03',
+      pages: '10 páginas + Audio 10 min',
+      format: 'Ondas Alpha → Theta + Tarjeta bolsillo',
+      icon: <Shield size={20} strokeWidth={1.7} />,
+    };
   };
 
   return (
     <div className="tools-viewport">
       <div className="packs-hero-header">
         <div className="section-eyebrow">
-          Pago Seguro con Stripe · Descarga Inmediata · {initialCycle.editionLabel} (CENEVAL/UAA: {EXAM_SOURCES_SNAPSHOT.lastSyncedLabel})
+          Pago único con Stripe · Descarga directa · {initialCycle.editionLabel} (Fuentes: {EXAM_SOURCES_SNAPSHOT.lastSyncedLabel})
         </div>
-        <h1 className="packs-h1">Herramientas de Alto Rendimiento</h1>
+        <h1 className="packs-h1">Cuadernos de Estudio y Audio WAV</h1>
         <p className="packs-sub">
-          Material editorial detallado, plantillas imprimibles, audio estéreo en .wav y simulador de 50 reactivos. Compra directa con Stripe y descarga inmediata en tu dispositivo.
+          Material editorial listo para imprimir, pistas estéreo .wav sin compresión y simulador de 50 reactivos. Escucha las muestras o descarga la guía gratuita antes de decidir.
         </p>
 
         <div className="packs-verify-strip">
@@ -530,9 +550,9 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
       {recentProduct && (
         <div className="confirmed-download-dock" role="region" aria-label="Centro de descargas desbloqueadas">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-            <CheckCircle2 size={22} style={{ color: 'var(--emerald-400)', flexShrink: 0 }} />
+            <CheckCircle2 size={22} style={{ color: 'var(--emerald-500)', flexShrink: 0 }} />
             <div>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--emerald-400)', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--emerald-500)', textTransform: 'uppercase' }}>
                 Pago Confirmado · Acceso Permanente en este Navegador
               </div>
               <h2 className="modal-title-serif" style={{ fontSize: '20px', margin: '2px 0 0' }}>
@@ -566,7 +586,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
             )}
             {recentProduct.id === 'reactivos-pack' && (
               <button type="button" className="btn btn-emerald" onClick={() => setShowSimulatorModal(true)}>
-                <Sparkles size={15} />
+                <BookOpen size={15} />
                 Abrir Simulador de 50 Preguntas
               </button>
             )}
@@ -580,10 +600,11 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
         </div>
       )}
 
-      {/* 3-Card Premium Showcase Grid */}
+      {/* 3-Card Editorial Folio Grid */}
       <div className="packs-grid">
         {products.map((product) => {
           const isUnlocked = unlockedIds.includes(product.id);
+          const folio = getFolioMeta(product.id);
           const themeClass =
             product.id === 'neuro-kit'
               ? 'is-neuro'
@@ -593,9 +614,20 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
 
           return (
             <article key={product.id} className={`pack-card ${themeClass} ${isUnlocked ? 'is-unlocked' : ''}`}>
-              <div className="pack-visual-band">
-                <span className="pack-badge">{isUnlocked ? '✓ Desbloqueado' : product.badge}</span>
-                <div className="pack-icon-wrap">{renderCardIcon(product.id)}</div>
+              <div className="pack-folio-band">
+                <div className="pack-folio-top">
+                  <span className="pack-catalog-code">{folio.code}</span>
+                  <span className="pack-badge">{isUnlocked ? '✓ Desbloqueado' : product.badge}</span>
+                </div>
+                <div className="pack-folio-spec">
+                  <div className="pack-folio-meta">
+                    {folio.pages}
+                    <span>{folio.format}</span>
+                  </div>
+                  <div className="pack-folio-emblem" aria-hidden="true">
+                    {folio.icon}
+                  </div>
+                </div>
               </div>
 
               <div className="pack-body">
@@ -613,7 +645,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
 
                 {product.id === 'reactivos-pack' && latestReportText && (
                   <div className="pack-diagnostic-note">
-                    <Sparkles size={13} />
+                    <BookOpen size={13} />
                     <span>Incluye tu reporte diagnóstico actual dentro del PDF.</span>
                   </div>
                 )}
@@ -684,7 +716,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                             style={{ width: '100%' }}
                             onClick={() => setShowSimulatorModal(true)}
                           >
-                            <Sparkles size={15} />
+                            <BookOpen size={15} />
                             Abrir Simulador (50 Preguntas)
                           </button>
                         </>
@@ -741,6 +773,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                       }}
                     >
                       {product.ctaLabel}
+                      <ArrowRight size={14} />
                     </button>
                   )}
                 </div>
