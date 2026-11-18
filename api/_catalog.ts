@@ -24,37 +24,46 @@ export const getServerCatalog = (): Record<ProductId, ProductSpec> => ({
     name: 'Kit de Neuro-Aprendizaje',
     badge: 'PDF + Audio WAV',
     tagline:
-      'Plantillas de estudio basadas en ciclos ultradianos (90/20), método Feynman y audio binaural 40 Hz para enfoque profundo.',
+      'Guía visual extensa con diagramas ultradianos (90/20), plantillas imprimibles Feynman/Repaso Espaciado y audio binaural 40 Hz.',
     priceMxn: parsePrice(process.env.PRICE_NEURO_KIT_MXN, 99),
     compareAtMxn: 299,
-    ctaLabel: 'Comprar y Descargar',
-    deliverables: ['PDF Plantillas Ultradianas y Repaso Espaciado', 'Audio Binaural 40 Hz Enfoque (.wav)'],
+    ctaLabel: 'Pagar con Stripe y Descargar',
+    deliverables: [
+      'PDF Cuaderno Visual + Plantillas Imprimibles (8 págs.)',
+      'Audio Binaural 40 Hz Enfoque Profundo (.wav)',
+      'Reproductor Binaural Integrado Sin Límite',
+    ],
   },
   'reactivos-pack': {
     id: 'reactivos-pack',
     name: 'Banco de 50 Reactivos EXANI-II',
     badge: 'Best Seller · Edición 2026',
     tagline:
-      '50 preguntas originales de alta exigencia basadas en el temario oficial CENEVAL 2026 con simulacro interactivo y soluciones comentadas.',
+      '50 preguntas originales estilo CENEVAL 2026 en formato examen imprimible + solucionario completo paso a paso + simulador interactivo.',
     priceMxn: parsePrice(process.env.PRICE_REACTIVOS_PACK_MXN, 149),
     compareAtMxn: 499,
-    ctaLabel: 'Comprar y Descargar Pack',
+    ctaLabel: 'Comprar Pack con Stripe',
     featured: true,
     deliverables: [
-      'PDF 50 Reactivos EXANI-II + Clave Explicada',
-      'Simulador Interactivo Completo Desbloqueado',
+      'PDF Examen 50 Reactivos + Tabla Clave + Solucionario (20 págs.)',
+      'Simulador Interactivo Completo (50 Preguntas por Área)',
+      'Diagnóstico Personal Integrado en tu Cuadernillo',
     ],
   },
   'nsdr-protocol': {
     id: 'nsdr-protocol',
     name: 'Protocolo Anti-Ansiedad NSDR',
-    badge: 'Audio + Guía PDF',
+    badge: 'Audio WAV + Guía PDF',
     tagline:
-      'Sesión sonora de 10 min basada en NSDR (Alpha → Theta) y respiración táctica 4-7-8 para reducir el estrés antes del examen.',
+      'Audio estéreo NSDR (Alpha 10 Hz → Theta 6 Hz) y guía clínica visual de regulación vagal 4-7-8 / 4-4-4-4 y checklist pre-examen UAA.',
     priceMxn: parsePrice(process.env.PRICE_NSDR_PROTOCOL_MXN, 79),
     compareAtMxn: 199,
     ctaLabel: 'Obtener Audio y Guía',
-    deliverables: ['Audio Protocolo NSDR Relajación (.wav)', 'PDF Rutina Pre-Examen 10 Minutos'],
+    deliverables: [
+      'Audio Estéreo NSDR Alpha → Theta (.wav)',
+      'PDF Guía Clínica Pre-Examen + Diagramas (5 págs.)',
+      'Reproductor NSDR Guiado 10 Minutos en Navegador',
+    ],
   },
 });
 

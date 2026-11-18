@@ -8,29 +8,6 @@ import {
   type ApiResponse,
 } from './_security.js';
 
-const getPayPalBaseUrl = (): string => {
-  return (process.env.PAYPAL_SANDBOX || '').trim().toLowerCase() === 'true'
-    ? 'https://api-m.sandbox.paypal.com'
-    : 'https://api-m.paypal.com';
-};
-
-const getPayPalAccessToken = async (clientId: string, clientSecret: string): Promise<string> => {
-  const auth = Buffer.from(`${clientId}:${clientSecret}`, 'utf8').toString('base64');
-  const res = await fetch(`${getPayPalBaseUrl()}/v1/oauth2/token`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${auth}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-  });
-  const data = (await res.json()) as { access_token?: string };
-  if (!res.ok || !data.access_token) {
-    throw new Error('PayPal auth failed');
-  }
-  return data.access_token;
-};
-
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -40,7 +17,6 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     provider?: string;
     productId?: string;
     sessionId?: string;
-    orderId?: string;
     accessCode?: string;
     token?: string;
     tokens?: string[];
@@ -113,74 +89,6 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return res.status(200).json({ verified: true, token, productId: paidProductId });
     } catch {
       return res.status(502).json({ verified: false, error: 'Error al verificar con Stripe.' });
-    }
-  }
-
-  if (body.provider === 'paypal') {
-    const clientId = (process.env.PAYPAL_CLIENT_ID || '').trim();
-    const clientSecret = (process.env.PAYPAL_CLIENT_SECRET || '').trim();
-    const orderId = (body.orderId || '').trim();
-
-    if (!clientId || !clientSecret) {
-      return res.status(503).json({ verified: false, error: 'PayPal no está configurado.' });
-    }
-    if (!orderId || !/^[A-Z0-9]{10,36}$/i.test(orderId)) {
-      return res.status(400).json({ verified: false, error: 'ID de orden de PayPal inválido.' });
-    }
-
-    try {
-      const accessToken = await getPayPalAccessToken(clientId, clientSecret);
-      const checkRes = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders/${encodeURIComponent(orderId)}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      const checkData = (await checkRes.json()) as {
-        status?: string;
-        purchase_units?: Array<{ custom_id?: string }>;
-      };
-
-      let finalStatus = checkData.status;
-      let orderProductId = checkData.purchase_units?.[0]?.custom_id;
-
-      if (checkRes.ok && finalStatus !== 'COMPLETED') {
-        const capRes = await fetch(
-          `${getPayPalBaseUrl()}/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-              'PayPal-Request-Id': `cap-${orderId}`,
-            },
-          }
-        );
-        const capData = (await capRes.json()) as {
-          status?: string;
-          purchase_units?: Array<{ custom_id?: string }>;
-        };
-        finalStatus = capData.status;
-        orderProductId = orderProductId || capData.purchase_units?.[0]?.custom_id;
-      }
-
-      if (finalStatus !== 'COMPLETED') {
-        return res.status(402).json({
-          verified: false,
-          error: 'El pago aún no aparece completado en PayPal.',
-        });
-      }
-
-      const paidProductId: ProductId = isValidProductId(orderProductId)
-        ? orderProductId
-        : isValidProductId(body.productId)
-          ? body.productId
-          : 'reactivos-pack';
-
-      const token = createAccessToken(`paypal:${orderId}`, paidProductId);
-      if (!token) {
-        return res.status(503).json({ verified: false, error: 'Falta DOWNLOAD_TOKEN_SECRET en el servidor.' });
-      }
-      return res.status(200).json({ verified: true, token, productId: paidProductId });
-    } catch {
-      return res.status(502).json({ verified: false, error: 'Error al verificar el pago con PayPal.' });
     }
   }
 

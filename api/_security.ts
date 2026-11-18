@@ -68,12 +68,7 @@ const getSigningSecret = (): string | null => {
   const explicit = (process.env.DOWNLOAD_TOKEN_SECRET || '').trim();
   if (explicit) return explicit;
 
-  const fallback = (
-    process.env.STRIPE_SECRET_KEY ||
-    process.env.PAYPAL_CLIENT_SECRET ||
-    process.env.KIT_ACCESS_CODES ||
-    ''
-  ).trim();
+  const fallback = (process.env.STRIPE_SECRET_KEY || process.env.KIT_ACCESS_CODES || '').trim();
 
   if (!fallback) return null;
   return crypto.createHash('sha256').update(`exani-kit-signing:${fallback}`).digest('hex');

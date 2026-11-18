@@ -9,13 +9,15 @@ const writeAscii = (view: DataView, offset: number, text: string) => {
 };
 
 /**
- * Generates a real 16-bit Stereo PCM RIFF WAVE Blob purely in TypeScript.
- * Guaranteed zero external CDN dependencies and instant offline playback.
+ * Synthesizes a 16-bit Stereo PCM RIFF WAVE Blob purely in TypeScript.
+ * - neuro-focus: 180s (3 min) 40 Hz Gamma binaural (200 Hz L / 240 Hz R) + warm 100/300 Hz harmonic pad
+ * - nsdr-calm: 240s (4 min) Alpha (10 Hz) -> Theta (6 Hz) sweep + 4-7-8 breathing swell cadence
  */
-export const synthesizeStereoWavBlob = (kind: AudioSessionKind, durationSec = 90): Blob => {
+export const synthesizeStereoWavBlob = (kind: AudioSessionKind, durationSec?: number): Blob => {
+  const duration = durationSec ?? (kind === 'neuro-focus' ? 180 : 240);
   const numChannels = 2;
   const bitsPerSample = 16;
-  const totalSamples = Math.floor(SAMPLE_RATE * durationSec);
+  const totalSamples = Math.floor(SAMPLE_RATE * duration);
   const dataByteLength = totalSamples * numChannels * (bitsPerSample / 8);
   const buffer = new ArrayBuffer(44 + dataByteLength);
   const view = new DataView(buffer);
@@ -25,8 +27,8 @@ export const synthesizeStereoWavBlob = (kind: AudioSessionKind, durationSec = 90
   view.setUint32(4, 36 + dataByteLength, true);
   writeAscii(view, 8, 'WAVE');
   writeAscii(view, 12, 'fmt ');
-  view.setUint32(16, 16, true); // PCM chunk size
-  view.setUint16(20, 1, true); // PCM format
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
   view.setUint16(22, numChannels, true);
   view.setUint32(24, SAMPLE_RATE, true);
   view.setUint32(28, SAMPLE_RATE * numChannels * (bitsPerSample / 8), true);
@@ -40,37 +42,38 @@ export const synthesizeStereoWavBlob = (kind: AudioSessionKind, durationSec = 90
 
   for (let i = 0; i < totalSamples; i++) {
     const t = i / SAMPLE_RATE;
-    // Smooth 3-second fade in/out envelope
-    const fadeIn = Math.min(1, t / 3);
-    const fadeOut = Math.min(1, (durationSec - t) / 3);
+    const fadeIn = Math.min(1, t / 4);
+    const fadeOut = Math.min(1, (duration - t) / 4);
     const masterEnv = fadeIn * fadeOut;
 
-    // Gentle deterministic pink/brown noise bed
     const pseudoWhite = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
     const white = (pseudoWhite - Math.floor(pseudoWhite)) * 2 - 1;
-    noiseState = noiseState * 0.96 + white * 0.04;
+    noiseState = noiseState * 0.965 + white * 0.035;
 
     let left = 0;
     let right = 0;
 
     if (kind === 'neuro-focus') {
-      // 40 Hz Gamma Focus Binaural Beat: 200 Hz (L) & 240 Hz (R) + warm 100 Hz harmonic drone
-      const harmonicPad = 0.11 * Math.sin(2 * Math.PI * 100 * t) + 0.05 * Math.sin(2 * Math.PI * 300 * t);
-      const pulse = 0.85 + 0.15 * Math.sin(2 * Math.PI * 0.25 * t);
-      left = (0.26 * Math.sin(2 * Math.PI * 200 * t) * pulse + harmonicPad + noiseState * 0.12) * masterEnv;
-      right = (0.26 * Math.sin(2 * Math.PI * 240 * t) * pulse + harmonicPad + noiseState * 0.12) * masterEnv;
+      const harmonicPad =
+        0.11 * Math.sin(2 * Math.PI * 100 * t) +
+        0.045 * Math.sin(2 * Math.PI * 150 * t) +
+        0.035 * Math.sin(2 * Math.PI * 300 * t);
+      const pulse = 0.86 + 0.14 * Math.sin(2 * Math.PI * 0.2 * t);
+      left = (0.25 * Math.sin(2 * Math.PI * 200 * t) * pulse + harmonicPad + noiseState * 0.13) * masterEnv;
+      right = (0.25 * Math.sin(2 * Math.PI * 240 * t) * pulse + harmonicPad + noiseState * 0.13) * masterEnv;
     } else {
-      // NSDR Alpha (10 Hz) -> Theta (6 Hz) Relaxation Sweep + slow 4-7-8 breathing swell (~19s cycle)
-      const progress = t / durationSec;
-      const beatFreq = 10 - 4 * progress; // smoothly glides from 10 Hz down to 6 Hz
+      const progress = t / duration;
+      const beatFreq = 10 - 4 * progress;
       const breathEnv = 0.72 + 0.28 * Math.sin(2 * Math.PI * (t / 19) - Math.PI / 2);
-      const warmSub = 0.14 * Math.sin(2 * Math.PI * 87 * t) + 0.06 * Math.sin(2 * Math.PI * 261 * t);
+      const warmSub =
+        0.14 * Math.sin(2 * Math.PI * 87 * t) +
+        0.06 * Math.sin(2 * Math.PI * 130.5 * t) +
+        0.045 * Math.sin(2 * Math.PI * 261 * t);
       const phaseL = 2 * Math.PI * 174 * t;
-      // Integral of (174 + 10 - 4*(t/D)) = 184*t - 2*(t^2/D)
-      const phaseR = 2 * Math.PI * (184 * t - (2 * t * t) / durationSec);
+      const phaseR = 2 * Math.PI * (184 * t - (2 * t * t) / duration);
 
-      left = (0.24 * Math.sin(phaseL) * breathEnv + warmSub + noiseState * 0.16) * masterEnv;
-      right = (0.24 * Math.sin(phaseR + beatFreq * 0.001) * breathEnv + warmSub + noiseState * 0.16) * masterEnv;
+      left = (0.23 * Math.sin(phaseL) * breathEnv + warmSub + noiseState * 0.16) * masterEnv;
+      right = (0.23 * Math.sin(phaseR + beatFreq * 0.001) * breathEnv + warmSub + noiseState * 0.16) * masterEnv;
     }
 
     const clampedL = Math.max(-0.98, Math.min(0.98, left));
@@ -92,22 +95,21 @@ const triggerBlobDownload = (blob: Blob, filename: string) => {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+  window.setTimeout(() => URL.revokeObjectURL(url), 5000);
 };
 
 export const downloadNeuroAudioWav = () => {
-  const blob = synthesizeStereoWavBlob('neuro-focus', 90);
+  const blob = synthesizeStereoWavBlob('neuro-focus', 180);
   triggerBlobDownload(blob, 'Audio-Binaural-40Hz-Enfoque-MiguelLopez.wav');
 };
 
 export const downloadNsdrAudioWav = () => {
-  const blob = synthesizeStereoWavBlob('nsdr-calm', 90);
+  const blob = synthesizeStereoWavBlob('nsdr-calm', 240);
   triggerBlobDownload(blob, 'Protocolo-NSDR-AntiAnsiedad-MiguelLopez.wav');
 };
 
 /**
- * Lightweight real-time Web Audio synthesizer for instant in-browser playback
- * (supports unlimited or preview durations without memory overhead).
+ * Real-time Web Audio API synthesizer for instant uninterrupted browser playback.
  */
 export class LiveBinauralPlayer {
   private ctx: AudioContext | null = null;
@@ -119,7 +121,8 @@ export class LiveBinauralPlayer {
 
   start(kind: AudioSessionKind, volume = 0.25) {
     this.stop();
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioCtx =
+      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
 
     const ctx = new AudioCtx();
@@ -153,7 +156,6 @@ export class LiveBinauralPlayer {
     } else {
       oscL.frequency.setValueAtTime(174, ctx.currentTime);
       oscR.frequency.setValueAtTime(184, ctx.currentTime);
-      // Gradually sweep R from 184 Hz (10 Hz Alpha) to 180 Hz (6 Hz Theta) over 10 minutes
       oscR.frequency.linearRampToValueAtTime(180, ctx.currentTime + 600);
       subOsc.frequency.setValueAtTime(87, ctx.currentTime);
     }

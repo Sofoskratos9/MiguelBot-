@@ -199,7 +199,7 @@ const HelpModal: React.FC<{
             <strong>Laboratorio de Herramientas:</strong> Calculadora CENEVAL 700–1300, Simulador EXANI-II, Entrenador 4-7-8 / 4-4-4-4 y Orientador RIASEC.
           </li>
           <li style={{ marginBottom: '6px' }}>
-            <strong>Packs con Descarga Inmediata:</strong> Paga de forma segura con Stripe o PayPal y descarga al instante tu PDF y audio WAV sin salir de la plataforma.
+            <strong>Packs con Descarga Inmediata:</strong> Paga de forma segura con Stripe y descarga al instante tus cuadernos PDF y audios WAV sin salir de la plataforma.
           </li>
           <li>
             <strong>Privacidad local:</strong> Tus datos y tokens de descarga permanecen en tu navegador y puedes borrarlos en un clic.
@@ -308,7 +308,7 @@ const LandingView: React.FC<{
           </div>
           <div className="metric-card">
             <strong>50 Preguntas + WAV</strong>
-            <span>Descarga directa tras Stripe o PayPal</span>
+            <span>Descarga directa tras pagar con Stripe</span>
           </div>
           <div className="metric-card">
             <strong>700 – 1300 pts</strong>
@@ -324,7 +324,7 @@ const LandingView: React.FC<{
             Herramientas de Alto Rendimiento
           </h2>
           <p className="packs-sub">
-            Tecnología educativa de bajo costo y alto impacto. Paga con Stripe o PayPal y descarga tus archivos directo en pantalla.
+            Tecnología educativa de bajo costo y alto impacto. Paga con Stripe y descarga tus archivos directo en pantalla.
           </p>
         </div>
 

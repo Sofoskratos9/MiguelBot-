@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import {
   Brain,
   CheckCircle2,
@@ -36,7 +37,6 @@ export interface ProductSpec {
 
 interface PaymentConfigResponse {
   stripeEnabled: boolean;
-  paypalEnabled: boolean;
   accessCodeEnabled: boolean;
   products: ProductSpec[];
 }
@@ -47,37 +47,46 @@ const DEFAULT_PRODUCTS: ProductSpec[] = [
     name: 'Kit de Neuro-Aprendizaje',
     badge: 'PDF + Audio WAV',
     tagline:
-      'Plantillas de estudio basadas en ciclos ultradianos (90/20), método Feynman y audio binaural 40 Hz para enfoque profundo.',
+      'Guía visual extensa con diagramas ultradianos (90/20), plantillas imprimibles Feynman/Repaso Espaciado y audio binaural 40 Hz.',
     priceMxn: 99,
     compareAtMxn: 299,
-    ctaLabel: 'Comprar y Descargar',
-    deliverables: ['PDF Plantillas Ultradianas y Repaso Espaciado', 'Audio Binaural 40 Hz Enfoque (.wav)'],
+    ctaLabel: 'Pagar con Stripe y Descargar',
+    deliverables: [
+      'PDF Cuaderno Visual + Plantillas Imprimibles (8 págs.)',
+      'Audio Binaural 40 Hz Enfoque Profundo (.wav)',
+      'Reproductor Binaural Integrado Sin Límite',
+    ],
   },
   {
     id: 'reactivos-pack',
     name: 'Banco de 50 Reactivos EXANI-II',
     badge: 'Best Seller · Edición 2026',
     tagline:
-      '50 preguntas originales de alta exigencia basadas en el temario oficial CENEVAL 2026 con simulacro interactivo y soluciones comentadas.',
+      '50 preguntas originales estilo CENEVAL 2026 en formato examen imprimible + solucionario completo paso a paso + simulador interactivo.',
     priceMxn: 149,
     compareAtMxn: 499,
-    ctaLabel: 'Comprar y Descargar Pack',
+    ctaLabel: 'Comprar Pack con Stripe',
     featured: true,
     deliverables: [
-      'PDF 50 Reactivos EXANI-II + Clave Explicada',
-      'Simulador Interactivo Completo Desbloqueado',
+      'PDF Examen 50 Reactivos + Tabla Clave + Solucionario (20 págs.)',
+      'Simulador Interactivo Completo (50 Preguntas por Área)',
+      'Diagnóstico Personal Integrado en tu Cuadernillo',
     ],
   },
   {
     id: 'nsdr-protocol',
     name: 'Protocolo Anti-Ansiedad NSDR',
-    badge: 'Audio + Guía PDF',
+    badge: 'Audio WAV + Guía PDF',
     tagline:
-      'Sesión sonora de 10 min basada en NSDR (Alpha → Theta) y respiración táctica 4-7-8 para reducir el estrés antes del examen.',
+      'Audio estéreo NSDR (Alpha 10 Hz → Theta 6 Hz) y guía clínica visual de regulación vagal 4-7-8 / 4-4-4-4 y checklist pre-examen UAA.',
     priceMxn: 79,
     compareAtMxn: 199,
     ctaLabel: 'Obtener Audio y Guía',
-    deliverables: ['Audio Protocolo NSDR Relajación (.wav)', 'PDF Rutina Pre-Examen 10 Minutos'],
+    deliverables: [
+      'Audio Estéreo NSDR Alpha → Theta (.wav)',
+      'PDF Guía Clínica Pre-Examen + Diagramas (5 págs.)',
+      'Reproductor NSDR Guiado 10 Minutos en Navegador',
+    ],
   },
 ];
 
@@ -125,14 +134,14 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
   const [isChecking, setIsChecking] = useState<boolean>(true);
 
   const [selectedProduct, setSelectedProduct] = useState<ProductSpec | null>(null);
-  const [checkoutLoading, setCheckoutLoading] = useState<'stripe' | 'paypal' | 'code' | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState<'stripe' | 'code' | null>(null);
   const [buyerEmail, setBuyerEmail] = useState('');
   const [accessCode, setAccessCode] = useState('');
+  const [recentPurchaseId, setRecentPurchaseId] = useState<ProductId | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: 'ok' | 'err' | 'info'; text: string } | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [showSimulatorModal, setShowSimulatorModal] = useState<boolean>(false);
 
-  // Live audio player state (15s preview or unlimited unlocked session)
   const [playingAudio, setPlayingAudio] = useState<{
     kind: AudioSessionKind;
     isPreview: boolean;
@@ -140,6 +149,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
   } | null>(null);
 
   const playerRef = useRef<LiveBinauralPlayer | null>(null);
+  const handledRedirectRef = useRef<boolean>(false);
   const latestReportRef = useRef<string | null>(latestReportText);
   latestReportRef.current = latestReportText;
 
@@ -151,14 +161,12 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
     onUnlockedProductsChange?.(unique);
   };
 
-  // Cleanup live Web Audio player on unmount
   useEffect(() => {
     return () => {
       playerRef.current?.stop();
     };
   }, []);
 
-  // Audio playback timer (auto-stop preview at 15s)
   useEffect(() => {
     if (!playingAudio) return;
     const interval = window.setInterval(() => {
@@ -200,6 +208,9 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
           generateNeuroKitPdf();
         }
         if (asset === 'all' || asset === 'audio') {
+          if (asset === 'all') {
+            await new Promise((r) => setTimeout(r, 600));
+          }
           const { downloadNeuroAudioWav } = await import('./audioGenerator');
           downloadNeuroAudioWav();
         }
@@ -212,6 +223,9 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
           generateNsdrProtocolPdf();
         }
         if (asset === 'all' || asset === 'audio') {
+          if (asset === 'all') {
+            await new Promise((r) => setTimeout(r, 600));
+          }
           const { downloadNsdrAudioWav } = await import('./audioGenerator');
           downloadNsdrAudioWav();
         }
@@ -227,7 +241,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
     const bootstrap = async () => {
       setIsChecking(true);
 
-      // 1. Load catalog & enabled payment gateways from server
+      // 1. Load catalog & Stripe availability from server
       try {
         const res = await fetch('/api/payment-config');
         const contentType = res.headers.get('content-type') || '';
@@ -246,32 +260,37 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
 
       const storedMap = loadStoredTokens();
 
-      // 2. Check Stripe / PayPal redirect parameters
+      // 2. Check Stripe redirect parameters
       const params = new URLSearchParams(window.location.search);
       const paymentStatus = params.get('payment');
       const provider = params.get('provider');
       const paramProduct = params.get('product') as ProductId | null;
       const sessionId = params.get('session_id');
-      const paypalOrderId = params.get('token');
 
-      if (paymentStatus === 'cancelled') {
+      if (!handledRedirectRef.current && paymentStatus === 'cancelled') {
+        handledRedirectRef.current = true;
         if (!cancelled) {
           setStatusMessage({
             type: 'info',
-            text: 'El pago fue cancelado en la pasarela. No se realizó ningún cargo.',
+            text: 'El pago en Stripe fue cancelado. No se realizó ningún cargo.',
           });
+          window.history.replaceState({}, '', window.location.pathname);
         }
-        window.history.replaceState({}, '', window.location.pathname);
-      } else if (paymentStatus === 'success' && (provider === 'stripe' || provider === 'paypal')) {
+      } else if (
+        !handledRedirectRef.current &&
+        paymentStatus === 'success' &&
+        provider === 'stripe' &&
+        sessionId
+      ) {
+        handledRedirectRef.current = true;
         try {
           const verifyRes = await fetch('/api/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              provider,
+              provider: 'stripe',
               productId: paramProduct || undefined,
               sessionId,
-              orderId: paypalOrderId,
             }),
           });
           const verifyData = (await verifyRes.json()) as {
@@ -288,17 +307,26 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
             if (!cancelled) {
               const allIds = Object.keys(nextMap) as ProductId[];
               syncUnlocked(allIds);
+              setRecentPurchaseId(verifyData.productId);
               setStatusMessage({
                 type: 'ok',
-                text: 'Pago verificado correctamente. Tu descarga directa ha iniciado de inmediato.',
+                text: 'Pago confirmado con Stripe. Tus descargas iniciaron automáticamente; también tienes los botones directos abajo.',
               });
+              confetti({
+                particleCount: 70,
+                spread: 65,
+                origin: { y: 0.65 },
+                colors: ['#d4af37', '#10b981', '#e5c158'],
+              });
+              window.history.replaceState({}, '', window.location.pathname);
               await triggerProductDeliverable(verifyData.productId, 'all');
             }
           } else if (!cancelled) {
             setStatusMessage({
               type: 'err',
-              text: verifyData.error || 'No se pudo confirmar automáticamente tu pago.',
+              text: verifyData.error || 'No se pudo confirmar automáticamente tu pago con Stripe.',
             });
+            window.history.replaceState({}, '', window.location.pathname);
           }
         } catch {
           if (!cancelled) {
@@ -308,7 +336,6 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
             });
           }
         } finally {
-          window.history.replaceState({}, '', window.location.pathname);
           if (!cancelled) setIsChecking(false);
         }
         return;
@@ -331,7 +358,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
             }
           }
         } catch {
-          // Offline fallback: keep local list inactive until verified
+          // Keep current state if offline
         }
       }
 
@@ -341,16 +368,16 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
     bootstrap();
   }, []);
 
-  const handleCheckout = async (provider: 'stripe' | 'paypal') => {
+  const handleStripeCheckout = async () => {
     if (!selectedProduct) return;
-    setCheckoutLoading(provider);
+    setCheckoutLoading('stripe');
     setStatusMessage(null);
     try {
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          provider,
+          provider: 'stripe',
           productId: selectedProduct.id,
           email: buyerEmail.trim() || undefined,
         }),
@@ -359,7 +386,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
       if (!res.ok || !data.url) {
         setStatusMessage({
           type: 'err',
-          text: data.error || 'No se pudo iniciar la sesión de pago.',
+          text: data.error || 'No se pudo iniciar la sesión de pago en Stripe.',
         });
         return;
       }
@@ -410,12 +437,13 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
       const nextMap: TokenMap = { ...loadStoredTokens(), [unlockedPid]: data.token };
       saveStoredTokens(nextMap);
       syncUnlocked(Object.keys(nextMap) as ProductId[]);
+      setRecentPurchaseId(unlockedPid);
 
       setAccessCode('');
       setSelectedProduct(null);
       setStatusMessage({
         type: 'ok',
-        text: `Acceso verificado para ${selectedProduct.name}. Tu descarga automática ha iniciado.`,
+        text: `Acceso verificado para ${selectedProduct.name}. Tus descargas iniciaron automáticamente.`,
       });
       await triggerProductDeliverable(unlockedPid, 'all');
     } catch {
@@ -428,9 +456,8 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
     }
   };
 
-  const anyPaymentMethodEnabled = Boolean(
-    config && (config.stripeEnabled || config.paypalEnabled || config.accessCodeEnabled)
-  );
+  const anyPaymentMethodEnabled = Boolean(config && (config.stripeEnabled || config.accessCodeEnabled));
+  const recentProduct = recentPurchaseId ? products.find((p) => p.id === recentPurchaseId) : null;
 
   const renderCardIcon = (id: ProductId) => {
     if (id === 'neuro-kit') return <Brain size={44} strokeWidth={1.6} />;
@@ -440,12 +467,11 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
 
   return (
     <div className="tools-viewport">
-      {/* Editorial Header matching reference screenshot */}
       <div className="packs-hero-header">
-        <div className="section-eyebrow">Descarga Inmediata Verificada · Stripe &amp; PayPal</div>
+        <div className="section-eyebrow">Pago Seguro con Stripe · Descarga Inmediata</div>
         <h1 className="packs-h1">Herramientas de Alto Rendimiento</h1>
         <p className="packs-sub">
-          Tecnología educativa de bajo costo y alto impacto. Compra segura y descarga directa al instante en tu navegador, sin esperas ni intermediarios.
+          Material editorial detallado, plantillas imprimibles, audio estéreo en .wav y simulador de 50 reactivos. Compra directa con Stripe y descarga inmediata en tu dispositivo.
         </p>
 
         <div className="packs-verify-strip">
@@ -485,8 +511,56 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
         </div>
       </div>
 
+      {/* Confirmed Post-Payment Instant Download Dock */}
+      {recentProduct && (
+        <div className="confirmed-download-dock" role="region" aria-label="Centro de descargas desbloqueadas">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+            <CheckCircle2 size={22} style={{ color: 'var(--emerald-400)', flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--emerald-400)', textTransform: 'uppercase' }}>
+                Pago Confirmado · Acceso Permanente en este Navegador
+              </div>
+              <h2 className="modal-title-serif" style={{ fontSize: '20px', margin: '2px 0 0' }}>
+                {recentProduct.name} — Listo para descargar
+              </h2>
+            </div>
+          </div>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: '0 0 12px' }}>
+            Si tu navegador bloqueó alguna descarga automática múltiple, haz clic directamente en cada archivo abajo:
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            <button
+              type="button"
+              className="btn btn-gold"
+              disabled={Boolean(downloadingId)}
+              onClick={() => triggerProductDeliverable(recentProduct.id, 'pdf')}
+            >
+              <Download size={15} />
+              Descargar Cuaderno PDF Completo
+            </button>
+            {(recentProduct.id === 'neuro-kit' || recentProduct.id === 'nsdr-protocol') && (
+              <button
+                type="button"
+                className="btn btn-emerald"
+                disabled={Boolean(downloadingId)}
+                onClick={() => triggerProductDeliverable(recentProduct.id, 'audio')}
+              >
+                <Download size={15} />
+                Descargar Audio Estéreo (.wav)
+              </button>
+            )}
+            {recentProduct.id === 'reactivos-pack' && (
+              <button type="button" className="btn btn-emerald" onClick={() => setShowSimulatorModal(true)}>
+                <Sparkles size={15} />
+                Abrir Simulador de 50 Preguntas
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {statusMessage && (
-        <div className={`kit-feedback is-${statusMessage.type}`} style={{ maxWidth: '760px', margin: '0 auto 20px' }}>
+        <div className={`kit-feedback is-${statusMessage.type}`} style={{ maxWidth: '780px', margin: '0 auto 22px' }}>
           {statusMessage.text}
         </div>
       )}
@@ -547,7 +621,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                             onClick={() => triggerProductDeliverable('neuro-kit', 'pdf')}
                           >
                             <Download size={15} />
-                            Descargar Guía PDF
+                            Descargar Cuaderno PDF (8 págs.)
                           </button>
                           <div className="pack-dual-row">
                             <button
@@ -557,7 +631,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                               onClick={() => triggerProductDeliverable('neuro-kit', 'audio')}
                             >
                               <Download size={14} />
-                              Audio .wav
+                              Audio 40Hz .wav
                             </button>
                             <button
                               type="button"
@@ -587,7 +661,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                             onClick={() => triggerProductDeliverable('reactivos-pack', 'pdf')}
                           >
                             <Download size={15} />
-                            Descargar 50 Reactivos (PDF)
+                            Descargar Pack 50 Reactivos (20 págs.)
                           </button>
                           <button
                             type="button"
@@ -621,7 +695,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
                               onClick={() => triggerProductDeliverable('nsdr-protocol', 'pdf')}
                             >
                               <FileText size={14} />
-                              Guía PDF
+                              Guía PDF (5 págs.)
                             </button>
                             <button
                               type="button"
@@ -665,11 +739,11 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
       <div className="privacy-note packs-trust-footer">
         <ShieldCheck size={18} style={{ color: 'var(--gold-400)', flexShrink: 0 }} />
         <span>
-          <strong>Pago seguro con Stripe y PayPal + Descarga Automática:</strong> Al completar tu compra regresas directo aquí y tu PDF / Audio WAV se descarga al instante sin redirigir a chats externos.
+          <strong>Checkout oficial con Stripe + Descarga Directa:</strong> Paga de forma encriptada con tarjeta, Apple Pay o Google Pay; al confirmar regresas automáticamente aquí para descargar tu PDF y Audio WAV al instante.
         </span>
       </div>
 
-      {/* Checkout Modal for Selected Product */}
+      {/* Stripe-Only Checkout Modal */}
       {selectedProduct && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="checkout-modal-title">
           <div className="modal-card modal-checkout">
@@ -677,7 +751,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
               <div>
                 <div className="kit-status-badge" style={{ marginBottom: '8px' }}>
                   <Lock size={13} />
-                  Checkout Seguro · Descarga Inmediata
+                  Pago Seguro con Stripe · Descarga Inmediata
                 </div>
                 <h2 id="checkout-modal-title" className="modal-title-serif">
                   {selectedProduct.name}
@@ -716,67 +790,52 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
             </ul>
 
             {isChecking ? (
-              <p style={{ fontSize: '13.5px', color: 'var(--text-muted)' }}>Verificando pasarela de pagos...</p>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-muted)' }}>Verificando conexión con Stripe...</p>
             ) : !backendAvailable ? (
               <div className="kit-notice-box">
-                <strong>Vista previa local sin servidor de pagos:</strong> Al desplegar en Vercel con tus claves de <code>STRIPE_SECRET_KEY</code> o <code>PAYPAL_CLIENT_ID</code> / <code>PAYPAL_CLIENT_SECRET</code>, este modal abrirá el pago real y descargará el archivo automáticamente al regresar.
+                <strong>Vista previa local sin servidor de pagos:</strong> en producción con <code>STRIPE_SECRET_KEY</code>, este botón abrirá Stripe Checkout y descargará tus archivos automáticamente al volver.
               </div>
             ) : !anyPaymentMethodEnabled ? (
               <div className="kit-notice-box">
-                <strong>Configuración pendiente en el servidor:</strong> Agrega <code>STRIPE_SECRET_KEY</code> o <code>PAYPAL_CLIENT_ID</code> + <code>PAYPAL_CLIENT_SECRET</code> y <code>DOWNLOAD_TOKEN_SECRET</code> en las variables de entorno de Vercel para habilitar el cobro directo.
+                <strong>Stripe pendiente de configurar:</strong> agrega <code>STRIPE_SECRET_KEY</code> en Vercel Environment Variables para habilitar los cobros directos.
               </div>
             ) : (
               <div className="kit-pay-buttons">
-                {(config?.stripeEnabled || config?.paypalEnabled) && (
-                  <div>
-                    <label htmlFor="buyer-receipt-email" className="field-label">
-                      Correo para tu recibo (opcional)
-                    </label>
-                    <input
-                      id="buyer-receipt-email"
-                      type="email"
-                      value={buyerEmail}
-                      onChange={(e) => setBuyerEmail(e.target.value)}
-                      placeholder="tu-correo@ejemplo.com"
-                      className="field-input"
-                    />
-                  </div>
-                )}
-
                 {config?.stripeEnabled && (
-                  <button
-                    type="button"
-                    className="btn btn-gold"
-                    style={{ width: '100%' }}
-                    disabled={checkoutLoading !== null}
-                    onClick={() => handleCheckout('stripe')}
-                  >
-                    <CreditCard size={16} />
-                    {checkoutLoading === 'stripe'
-                      ? 'Conectando con Stripe...'
-                      : `Pagar $${selectedProduct.priceMxn} MXN con Tarjeta / Apple Pay (Stripe)`}
-                  </button>
-                )}
+                  <>
+                    <div>
+                      <label htmlFor="buyer-receipt-email" className="field-label">
+                        Correo para tu recibo de Stripe (opcional)
+                      </label>
+                      <input
+                        id="buyer-receipt-email"
+                        type="email"
+                        value={buyerEmail}
+                        onChange={(e) => setBuyerEmail(e.target.value)}
+                        placeholder="tu-correo@ejemplo.com"
+                        className="field-input"
+                      />
+                    </div>
 
-                {config?.paypalEnabled && (
-                  <button
-                    type="button"
-                    className="btn btn-paypal"
-                    style={{ width: '100%' }}
-                    disabled={checkoutLoading !== null}
-                    onClick={() => handleCheckout('paypal')}
-                  >
-                    <CreditCard size={16} />
-                    {checkoutLoading === 'paypal'
-                      ? 'Conectando con PayPal...'
-                      : `Pagar $${selectedProduct.priceMxn} MXN con PayPal`}
-                  </button>
+                    <button
+                      type="button"
+                      className="btn btn-gold"
+                      style={{ width: '100%' }}
+                      disabled={checkoutLoading !== null}
+                      onClick={handleStripeCheckout}
+                    >
+                      <CreditCard size={16} />
+                      {checkoutLoading === 'stripe'
+                        ? 'Abriendo Stripe Checkout...'
+                        : `Pagar $${selectedProduct.priceMxn} MXN con Stripe`}
+                    </button>
+                  </>
                 )}
 
                 {config?.accessCodeEnabled && (
                   <form onSubmit={handleVerifyAccessCode} className="access-code-form">
                     <label htmlFor="kit-access-code" className="field-label" style={{ marginBottom: '4px' }}>
-                      ¿Tienes un código de descarga?
+                      ¿Tienes un código de acceso?
                     </label>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <input
@@ -810,7 +869,7 @@ export const StudyKitSection: React.FC<StudyKitSectionProps> = ({
         </div>
       )}
 
-      {/* Full 50-Question Simulator Modal (Unlocked by reactivos-pack) */}
+      {/* Full 50-Question Simulator Modal */}
       {showSimulatorModal && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Simulador EXANI-II 50 Reactivos">
           <div className="modal-card modal-simulator">

@@ -215,7 +215,7 @@ export const ExaniSimulator: React.FC<ExaniSimulatorProps> = ({ isUnlocked, onUn
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Lock size={16} style={{ color: 'var(--gold-400)', flexShrink: 0 }} />
             <span>
-              Estás probando 4 reactivos de muestra. Desbloquea los <strong>50 reactivos comentados + PDF</strong> al instante con Stripe o PayPal.
+              Estás probando 4 reactivos de muestra. Desbloquea los <strong>50 reactivos comentados + PDF</strong> al instante con Stripe.
             </span>
           </div>
           <button type="button" className="btn btn-gold btn-sm" onClick={onUnlockRequest}>
